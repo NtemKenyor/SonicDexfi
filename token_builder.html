@@ -81,33 +81,77 @@
     let currentTokenAddress = null;
 
     // -------- WALLET HANDLING --------
+    // async function initWallet() {
+    //   const urlParams = new URLSearchParams(window.location.search);
+    //   walletAddress = urlParams.get("wallet_address");
+
+    //   if (walletAddress) {
+    //     document.getElementById("walletInfo").innerText = `Connected (from URL): ${walletAddress}`;
+    //     return;
+    //   }
+
+    //   if (!window.ethereum) {
+    //     alert("Please install MetaMask!");
+    //     return;
+    //   }
+
+    //   try {
+    //     provider = new ethers.providers.Web3Provider(window.ethereum);
+    //     await provider.send("eth_requestAccounts", []);
+    //     signer = provider.getSigner();
+    //     walletAddress = await signer.getAddress();
+
+    //     document.getElementById("walletInfo").innerText = `Connected: ${walletAddress}`;
+    //   } catch (err) {
+    //     alert("Wallet connection failed: " + err.message);
+    //   }
+    // }
+    // document.getElementById("connectBtn").onclick = initWallet;
+
     async function initWallet() {
-      const urlParams = new URLSearchParams(window.location.search);
-      walletAddress = urlParams.get("wallet_address");
+    const urlParams = new URLSearchParams(window.location.search);
+    let walletInfo = document.getElementById("walletInfo");
 
-      if (walletAddress) {
-        document.getElementById("walletInfo").innerText = `Connected (from URL): ${walletAddress}`;
-        return;
-      }
+    // 1. Check URL parameter for wallet
+    walletAddress = urlParams.get("wallet_address");
+    if (walletAddress) {
+      walletInfo.innerText = `Connected (from URL): ${walletAddress}`;
+      return;
+    }
 
-      if (!window.ethereum) {
-        alert("Please install MetaMask!");
-        return;
-      }
-
+    // 2. Try detecting injected wallets (MetaMask, Brave, Coinbase, etc.)
+    if (typeof window.ethereum !== "undefined") {
       try {
-        provider = new ethers.providers.Web3Provider(window.ethereum);
+        provider = new ethers.providers.Web3Provider(window.ethereum, "any");
         await provider.send("eth_requestAccounts", []);
         signer = provider.getSigner();
         walletAddress = await signer.getAddress();
 
-        document.getElementById("walletInfo").innerText = `Connected: ${walletAddress}`;
+        walletInfo.innerText = `Connected: ${walletAddress}`;
+        return;
       } catch (err) {
-        alert("Wallet connection failed: " + err.message);
+        console.warn("Wallet connection failed:", err.message);
+        alert("Could not connect to your wallet. A demo wallet will be created instead.");
       }
+    } else {
+      alert("No wallet detected. We'll create a demo wallet for you.");
     }
-    document.getElementById("connectBtn").onclick = initWallet;
 
+    // 3. Create a demo wallet if no wallet is connected
+    const demoWallet = ethers.Wallet.createRandom();
+    walletAddress = demoWallet.address;
+
+    // You can store the private key securely (localStorage, sessionStorage, etc.)
+    sessionStorage.setItem("demoWalletPrivateKey", demoWallet.privateKey);
+
+    walletInfo.innerText =
+      `Demo Wallet Created: ${walletAddress}\n` +
+      "(This is temporary and can be removed or replaced later.)";
+  }
+
+  document.getElementById("connectBtn").onclick = initWallet;
+
+  
     // -------- TOKEN STORAGE --------
     function saveToken(tokenAddress, name, symbol) {
       const tokens = JSON.parse(localStorage.getItem("myTokens") || "[]");

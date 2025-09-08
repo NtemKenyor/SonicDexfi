@@ -684,7 +684,7 @@
                 <div class="wallet-info">
                     <div><strong>Connected:</strong> <span id="walletName">MetaMask</span></div>
                     <div class="wallet-address" id="walletAddress"></div>
-                    <div><strong>Balance:</strong> <span id="nativeBalance">0 STT</span></div>
+                    <div><strong>Balance:</strong> <span id="nativeBalance">0 S</span></div>
                 </div>
                 <button class="disconnect-btn" onclick="disconnectWallet()">Disconnect</button>
             </div>
@@ -702,7 +702,7 @@
 
         <div id="token" class="tab-content active">
             <h2>Token Manager</h2>
-            <iframe style="width: 100%; height: max-content;" src="token_builder.html" ></iframe>
+            <iframe style="width: 100%; min-height: 100vh;" src="token_builder.html" ></iframe>
         </div>
 
         <div id="swap" class="tab-content">
@@ -711,8 +711,8 @@
             <div class="pair-selector">
                 <label>Trading Pair:</label>
                 <select id="swapPairSelect" onchange="selectPair(this.value)">
-                    <option value="STT_USSD">STT/USSD - Solareum ↔ US Standard Dollar</option>
-                    <option value="GX_USSD">GX/USSD - GX Token ↔ US Standard Dollar</option>
+                    <option value="STT_USSD">WS/USDD - Wrapped Sonic ↔ US Standard Dollar</option>
+                    <option value="GX_USSD">GX/USDD - GX Token ↔ US Standard Dollar</option>
                 </select>
             </div>
 
@@ -721,10 +721,10 @@
                 <div class="input-group">
                     <input type="number" id="swapFromAmount" placeholder="0.0" step="any">
                     <div class="token-select" id="fromTokenSelect">
-                        <span id="fromTokenSymbol">STT</span> ▼
+                        <span id="fromTokenSymbol">S</span> ▼
                     </div>
                 </div>
-                <div class="balance-display">Balance: <span id="fromBalance">0</span> <span id="fromBalanceSymbol">STT</span></div>
+                <div class="balance-display">Balance: <span id="fromBalance">0</span> <span id="fromBalanceSymbol">S</span></div>
             </div>
 
             <div class="swap-icon">
@@ -736,10 +736,10 @@
                 <div class="input-group">
                     <input type="number" id="swapToAmount" placeholder="0.0" readonly>
                     <div class="token-select" id="toTokenSelect">
-                        <span id="toTokenSymbol">USSD</span> ▼
+                        <span id="toTokenSymbol">USDD</span> ▼
                     </div>
                 </div>
-                <div class="balance-display">Balance: <span id="toBalance">0</span> <span id="toBalanceSymbol">USSD</span></div>
+                <div class="balance-display">Balance: <span id="toBalance">0</span> <span id="toBalanceSymbol">USDD</span></div>
             </div>
 
             <div class="price-info" id="priceInfo" style="display: none;">
@@ -766,8 +766,8 @@
             <div class="pair-selector">
                 <label>Trading Pair:</label>
                 <select id="liquidityPairSelect" onchange="selectPair(this.value)">
-                    <option value="STT_USSD">STT/USSD - Solareum ↔ US Standard Dollar</option>
-                    <option value="GX_USSD">GX/USSD - GX Token ↔ US Standard Dollar</option>
+                    <option value="STT_USSD">WS/USDD - Wrapped Sonic ↔ US Standard Dollar</option>
+                    <option value="GX_USSD">GX/USDD - GX Token ↔ US Standard Dollar</option>
                 </select>
             </div>
 
@@ -778,10 +778,10 @@
                         <div class="input-group">
                             <input type="number" id="liquidityAmountA" placeholder="0.0" step="any">
                             <div class="token-select">
-                                <span id="liquidityTokenASymbol">STT</span>
+                                <span id="liquidityTokenASymbol">S</span>
                             </div>
                         </div>
-                        <div class="balance-display">Balance: <span id="liquidityBalanceA">0</span> <span id="liquidityBalanceASymbol">STT</span></div>
+                        <div class="balance-display">Balance: <span id="liquidityBalanceA">0</span> <span id="liquidityBalanceASymbol">S</span></div>
                     </div>
                 </div>
                 <div class="info-card">
@@ -790,10 +790,10 @@
                         <div class="input-group">
                             <input type="number" id="liquidityAmountB" placeholder="0.0" step="any">
                             <div class="token-select">
-                                <span id="liquidityTokenBSymbol">USSD</span>
+                                <span id="liquidityTokenBSymbol">USDD</span>
                             </div>
                         </div>
-                        <div class="balance-display">Balance: <span id="liquidityBalanceB">0</span> <span id="liquidityBalanceBSymbol">USSD</span></div>
+                        <div class="balance-display">Balance: <span id="liquidityBalanceB">0</span> <span id="liquidityBalanceBSymbol">USDD</span></div>
                     </div>
                 </div>
             </div>
@@ -806,8 +806,8 @@
             <div class="pair-selector">
                 <label>Trading Pair:</label>
                 <select id="removePairSelect" onchange="selectPair(this.value)">
-                    <option value="STT_USSD">STT/USSD - Solareum ↔ US Standard Dollar</option>
-                    <option value="GX_USSD">GX/USSD - GX Token ↔ US Standard Dollar</option>
+                    <option value="STT_USSD">WS/USDD - Wrapped Sonic ↔ US Standard Dollar</option>
+                    <option value="GX_USSD">GX/USDD - GX Token ↔ US Standard Dollar</option>
                 </select>
             </div>
 
@@ -822,8 +822,8 @@
 
             <div class="info-card" style="margin-bottom: 20px;">
                 <h3>You will receive:</h3>
-                <p><strong>Token A:</strong> <span id="removeTokenAAmount">0</span> <span id="removeTokenASymbol">STT</span></p>
-                <p><strong>Token B:</strong> <span id="removeTokenBAmount">0</span> <span id="removeTokenBSymbol">USSD</span></p>
+                <p><strong>Token A:</strong> <span id="removeTokenAAmount">0</span> <span id="removeTokenASymbol">S</span></p>
+                <p><strong>Token B:</strong> <span id="removeTokenBAmount">0</span> <span id="removeTokenBSymbol">USDD</span></p>
             </div>
 
             <button class="btn btn-primary" id="removeLiquidityBtn" onclick="removeLiquidity()" disabled>Connect Wallet to Remove Liquidity</button>
@@ -831,7 +831,7 @@
 
         <div id="ramp" class="tab-content">
             <h2>Ramp Services</h2>
-            <iframe style="width: 100%; height: max-content;" src="ramp.html" ></iframe>
+            <iframe style="width: 100%; min-height: 100vh;" src="ramp.html" ></iframe>
         </div>
 
         <div id="pools" class="tab-content">
@@ -840,14 +840,14 @@
             <div class="pair-selector">
                 <label>Trading Pair:</label>
                 <select id="poolsPairSelect" onchange="selectPair(this.value)">
-                    <option value="STT_USSD">STT/USSD - Solareum ↔ US Standard Dollar</option>
-                    <option value="GX_USSD">GX/USSD - GX Token ↔ US Standard Dollar</option>
+                    <option value="STT_USSD">WS/USDD - Wrapped Sonic ↔ US Standard Dollar</option>
+                    <option value="GX_USSD">GX/USDD - GX Token ↔ US Standard Dollar</option>
                 </select>
             </div>
 
             <div class="liquidity-info">
                 <div class="info-card">
-                    <h3 id="poolInfoTitle">STT/USSD Pool</h3>
+                    <h3 id="poolInfoTitle">WS/USDD Pool</h3>
                     <p><strong>Reserve A:</strong> <span id="reserveA">-</span></p>
                     <p><strong>Reserve B:</strong> <span id="reserveB">-</span></p>
                     <p><strong>Current Price:</strong> <span id="poolPrice">-</span></p>
@@ -994,38 +994,38 @@
         // Multi-pair configuration
 
         const PAIRS_CONFIG = {
-            STT_USSD: {
-                name: 'S/USSD',
+            STT_USDD: {
+                name: 'WS/USDD',
                 FACTORY_ADDRESS: "0xb06229eD4c53aEC803eC9E2c0d25B954685d77EC",
                 ROUTER_ADDRESS: "0xEd03899F0804B5BD49a06192f22900f89F3EC019",
                 PAIR_ADDRESS: "0x81001f1e0fC4aBB1F76444AFeEb148Bc8d1F9118",
                 TOKEN_A: {
                     address: "0xF22eF0085f6511f70b01a68F360dCc56261F768a",
-                    symbol: "STT",
-                    name: "Somnia Testnet Token",
+                    symbol: "S",
+                    name: "Sonic Testnet Token",
                     decimals: 18
                 },
                 TOKEN_B: {
-                    address: "0x22d33Bf4e4076C018539bEBD7213A505fa980676",
-                    symbol: "USSD",
+                    address: "0x65ad6C756ED11Ff84ACF9eDa8B5891F945aecD1F",
+                    symbol: "USDD",
                     name: "US Standard Dollar",
                     decimals: 18
                 }
             },
-            GX_USSD: {
-                name: 'GX/USSD',
-                FACTORY_ADDRESS: "0x221Fc0043237a93ddEc3b3C98faEA55D96eE2f96",
-                ROUTER_ADDRESS: "0xb04116B49E34078b35468205982e5CD1B6d566F7",
-                PAIR_ADDRESS: "0x7b22883D5ca7443eC45325CfF7BEdAD49BcC2110",
+            GX_USDD: {
+                name: 'GX/USDD',
+                FACTORY_ADDRESS: "0xedf19E1ddCca23fa1c56030bD5F5249AdD45d118",
+                ROUTER_ADDRESS: "0x4242bd5CcFD14306c57F10bB035Eb50E7a74cdf0",
+                PAIR_ADDRESS: "0xbeE69149e85824BC8415837e5c265F18906E6781",
                 TOKEN_A: {
-                    address: "0xd0c6db65b4B6Fd9B0FF325520A30c2aa726133f2",
+                    address: "0xf0a21805a0Be4164783bDa5b2133F32506291C87",
                     symbol: "GX",
                     name: "GX Token",
                     decimals: 18
                 },
                 TOKEN_B: {
-                    address: "0x22d33Bf4e4076C018539bEBD7213A505fa980676",
-                    symbol: "USSD",
+                    address: "0x65ad6C756ED11Ff84ACF9eDa8B5891F945aecD1F",
+                    symbol: "USDD",
                     name: "US Standard Dollar",
                     decimals: 18
                 }
@@ -1437,7 +1437,7 @@
                 
                 // Update native balance
                 const balance = await provider.getBalance(userAddress);
-                document.getElementById('nativeBalance').textContent = `${parseFloat(ethers.utils.formatEther(balance)).toFixed(4)} STT`;
+                document.getElementById('nativeBalance').textContent = `${parseFloat(ethers.utils.formatEther(balance)).toFixed(4)} S`;
                 
                 // Enable buttons
                 document.getElementById('swapBtn').disabled = false;
