@@ -1,0 +1,2074 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SomniaDexfi - Advanced DeFi Trading</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/5.7.2/ethers.umd.min.js"></script>
+  <!-- <script src="https://checkout.flutterwave.com/v3.js"></script> -->
+   <script src="assets/js/libs/v3.js"></script>
+
+  <style>
+    :root {
+      --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      --secondary-gradient: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+      --success-color: #10b981;
+      --error-color: #ef4444;
+      --warning-color: #f59e0b;
+      --glass-bg: rgba(255, 255, 255, 0.08);
+      --glass-border: rgba(255, 255, 255, 0.15);
+    }
+    
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: radial-gradient(ellipse at top, #1e1b4b 0%, #0f0f23 50%, #000000 100%);
+      color: #ffffff;
+      min-height: 100vh;
+      overflow-x: hidden;
+      position: relative;
+    }
+    
+    body::before {
+      content: '';
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: url('data:image/svg+xml,<svg width="60" height="60" viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg"><g fill="none" fill-rule="evenodd"><g fill="%23ffffff" fill-opacity="0.02"><circle cx="30" cy="30" r="1"/></g></svg>');
+      pointer-events: none;
+      z-index: -1;
+    }
+    
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 0 24px;
+    }
+    
+    /* Modal styles */
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 1000;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.8);
+      backdrop-filter: blur(10px);
+    }
+    
+    .modal-content {
+      background: var(--glass-bg);
+      border: 1px solid var(--glass-border);
+      backdrop-filter: blur(20px);
+      margin: 10% auto;
+      padding: 2rem;
+      border-radius: 20px;
+      width: 400px;
+      max-width: 90%;
+      animation: slideIn 0.3s ease;
+    }
+    
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateY(-50px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1.5rem;
+    }
+    
+    .modal-title {
+      font-size: 1.5rem;
+      font-weight: 700;
+      background: var(--primary-gradient);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    
+    .close {
+      background: none;
+      border: none;
+      color: #fff;
+      font-size: 1.5rem;
+      cursor: pointer;
+      padding: 0.5rem;
+      border-radius: 8px;
+      transition: background 0.3s ease;
+    }
+    
+    .close:hover {
+      background: rgba(255, 255, 255, 0.1);
+    }
+    
+    .wallet-option {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      padding: 1rem;
+      margin-bottom: 0.75rem;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--glass-border);
+      border-radius: 12px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+    
+    .wallet-option:hover {
+      background: rgba(255, 255, 255, 0.1);
+      border-color: rgba(102, 126, 234, 0.5);
+      transform: translateY(-2px);
+    }
+    
+    .wallet-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.2rem;
+      background: var(--primary-gradient);
+    }
+    
+    .wallet-info h3 {
+      font-weight: 600;
+      margin-bottom: 0.25rem;
+    }
+    
+    .wallet-info p {
+      font-size: 0.85rem;
+      color: #9ca3af;
+    }
+    
+    /* Navigation */
+    .navbar {
+      background: rgba(15, 15, 35, 0.9);
+      backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--glass-border);
+      padding: 1rem 0;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    }
+    
+    .nav-content {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    .logo {
+      font-size: 1.75rem;
+      font-weight: 700;
+      background: var(--primary-gradient);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    
+    .nav-tabs {
+      display: flex;
+      gap: 0.5rem;
+      list-style: none;
+      background: var(--glass-bg);
+      padding: 0.5rem;
+      border-radius: 12px;
+      border: 1px solid var(--glass-border);
+    }
+    
+    .nav-tab {
+      padding: 0.75rem 1.5rem;
+      cursor: pointer;
+      border-radius: 8px;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      font-weight: 500;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .nav-tab:hover {
+      background: rgba(102, 126, 234, 0.2);
+    }
+    
+    .nav-tab.active {
+      background: var(--primary-gradient);
+      color: white;
+      box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+    }
+    
+    .wallet-section {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+    
+    .network-indicator {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.5rem 1rem;
+      background: var(--glass-bg);
+      border: 1px solid var(--glass-border);
+      border-radius: 8px;
+      font-size: 0.9rem;
+    }
+    
+    .network-dot {
+      width: 8px;
+      height: 8px;
+      background: var(--success-color);
+      border-radius: 50%;
+      animation: pulse 2s infinite;
+    }
+    
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+    
+    .wallet-connect {
+      background: var(--primary-gradient);
+      border: none;
+      color: white;
+      padding: 0.75rem 1.5rem;
+      border-radius: 12px;
+      cursor: pointer;
+      font-weight: 600;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+    }
+    
+    .wallet-connect:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(102, 126, 234, 0.5);
+    }
+    
+    .wallet-connected {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.75rem 1rem;
+      background: var(--glass-bg);
+      border: 1px solid var(--glass-border);
+      border-radius: 12px;
+    }
+    
+    .wallet-avatar {
+      width: 24px;
+      height: 24px;
+      background: var(--primary-gradient);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.7rem;
+      font-weight: bold;
+    }
+    
+    /* Main Content */
+    .main-content {
+      padding: 2rem 0;
+      min-height: calc(100vh - 100px);
+    }
+
+    /* Card styles */
+    .card {
+      background: var(--glass-bg);
+      border: 1px solid var(--glass-border);
+      border-radius: 20px;
+      padding: 2rem;
+      margin-bottom: 2rem;
+      backdrop-filter: blur(20px);
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+    }
+
+    .card-title {
+      font-size: 1.5rem;
+      font-weight: 700;
+      margin-bottom: 1.5rem;
+      background: var(--primary-gradient);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    /* Form styles */
+    .form-group {
+      margin-bottom: 1.25rem;
+    }
+
+    .form-group label {
+      display: block;
+      margin-bottom: 0.5rem;
+      font-weight: 500;
+    }
+
+    .form-group input,
+    .form-group select {
+      width: 100%;
+      padding: 0.75rem;
+      border-radius: 12px;
+      border: 1px solid var(--glass-border);
+      background: rgba(255, 255, 255, 0.05);
+      color: white;
+      font-size: 1rem;
+    }
+
+    .form-group input::placeholder {
+      color: #9ca3af;
+    }
+
+    /* Button styles */
+    .btn {
+      background: var(--primary-gradient);
+      color: white;
+      border: none;
+      padding: 0.75rem 1.5rem;
+      border-radius: 12px;
+      cursor: pointer;
+      font-weight: 600;
+      transition: all 0.3s ease;
+      width: 100%;
+      font-size: 1rem;
+    }
+
+    .btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+    }
+
+    .btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    /* Status message */
+    .status {
+      margin-top: 1rem;
+      padding: 0.75rem;
+      border-radius: 8px;
+      text-align: center;
+      font-weight: 500;
+    }
+    
+    .status.success {
+      background: rgba(16, 185, 129, 0.2);
+      border: 1px solid var(--success-color);
+      color: var(--success-color);
+    }
+    
+    .status.error {
+      background: rgba(239, 68, 68, 0.2);
+      border: 1px solid var(--error-color);
+      color: var(--error-color);
+    }
+    
+    .status.loading {
+      background: rgba(245, 158, 11, 0.2);
+      border: 1px solid var(--warning-color);
+      color: var(--warning-color);
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      .nav-content {
+        flex-direction: column;
+        gap: 1rem;
+      }
+      
+      .nav-tabs {
+        flex-wrap: wrap;
+      }
+      
+      .wallet-section {
+        justify-content: center;
+      }
+    }
+
+    /* Tab content specific styles */
+    .trading-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 2rem;
+    }
+
+    .trading-header h1 {
+      font-size: 2rem;
+      font-weight: 700;
+      margin-bottom: 0.5rem;
+    }
+
+    .market-stats {
+      display: flex;
+      gap: 2rem;
+    }
+
+    .stat-item {
+      text-align: right;
+    }
+
+    .stat-value {
+      font-size: 1.25rem;
+      font-weight: bold;
+    }
+
+    .stat-label {
+      font-size: 0.85rem;
+      color: #9ca3af;
+    }
+
+    /* Pair list styles */
+    .pair-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+
+    .pair-header, .pair-row {
+      display: grid;
+      grid-template-columns: 1.5fr 1fr 1fr 1fr 1fr 1fr;
+      align-items: center;
+      padding: 0.75rem 1rem;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+    }
+
+    .pair-header {
+      font-weight: bold;
+      color: #9ca3af;
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 8px;
+    }
+
+    .pair-row {
+      background: rgba(255, 255, 255, 0.02);
+      border-radius: 8px;
+      transition: background 0.3s ease;
+    }
+
+    .pair-row:hover {
+      background: rgba(255, 255, 255, 0.08);
+    }
+
+    .badge {
+      padding: 0.25rem 0.6rem;
+      border-radius: 999px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      display: inline-block;
+    }
+
+    .badge.verified {
+      background: rgba(16, 185, 129, 0.2);
+      color: var(--success-color);
+      border: 1px solid var(--success-color);
+    }
+
+    .badge.community {
+      background: rgba(245, 158, 11, 0.2);
+      color: var(--warning-color);
+      border: 1px solid var(--warning-color);
+    }
+
+    .positive {
+      color: var(--success-color);
+      font-weight: 600;
+    }
+
+    .negative {
+      color: var(--error-color);
+      font-weight: 600;
+    }
+
+    .btn-trade {
+      background: var(--primary-gradient);
+      color: #fff;
+      border: none;
+      padding: 0.5rem 1rem;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: transform 0.2s ease, box-shadow 0.3s ease;
+      width: auto;
+    }
+
+    .btn-trade:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+    }
+
+    /* Swap specific styles */
+    .swap-container {
+      max-width: 420px;
+      margin: 2rem auto;
+    }
+
+    .swap-group {
+      margin-bottom: 1rem;
+      background: rgba(255, 255, 255, 0.05);
+      padding: 1rem;
+      border-radius: 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .swap-group input {
+      border: none;
+      background: transparent;
+      color: white;
+      font-size: 1rem;
+      flex: 1;
+    }
+
+    .swap-group input:focus {
+      outline: none;
+    }
+
+    .token-select {
+      margin-left: 1rem;
+      padding: 0.4rem 0.8rem;
+      border-radius: 8px;
+      border: 1px solid var(--glass-border);
+      background: rgba(255, 255, 255, 0.1);
+      color: white;
+      cursor: pointer;
+    }
+
+    .reverse-btn {
+      display: block;
+      margin: 0.8rem auto;
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid var(--glass-border);
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      color: white;
+      font-size: 1.2rem;
+      cursor: pointer;
+      transition: transform 0.2s ease;
+    }
+
+    .reverse-btn:hover {
+      transform: rotate(180deg);
+    }
+
+    /* Ramp specific styles */
+    .ramp-container {
+      max-width: 460px;
+      margin: 2rem auto;
+    }
+
+    .toggle-group {
+      display: flex;
+      margin-bottom: 1.5rem;
+    }
+
+    .toggle-btn {
+      flex: 1;
+      text-align: center;
+      padding: 0.8rem;
+      border: 1px solid var(--glass-border);
+      background: rgba(255, 255, 255, 0.05);
+      color: white;
+      cursor: pointer;
+      transition: background 0.3s ease;
+    }
+
+    .toggle-btn.active {
+      background: var(--primary-gradient);
+      font-weight: bold;
+    }
+
+    /* Portfolio specific styles */
+    .wallet-container {
+      max-width: 700px;
+      margin: 2rem auto;
+    }
+
+    .wallet-card {
+      background: var(--glass-bg);
+      border: 1px solid var(--glass-border);
+      border-radius: 20px;
+      padding: 1.5rem;
+      margin-bottom: 2rem;
+      backdrop-filter: blur(20px);
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+    }
+
+    .wallet-title {
+      font-size: 1.6rem;
+      font-weight: 700;
+      margin-bottom: 1.2rem;
+      text-align: center;
+      background: var(--primary-gradient);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .balances {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 1rem;
+      margin-top: 1rem;
+    }
+
+    .balance-item {
+      text-align: center;
+      background: rgba(255, 255, 255, 0.05);
+      padding: 1rem;
+      border-radius: 12px;
+    }
+
+    .balance-item h4 {
+      margin-bottom: 0.3rem;
+      font-size: 1.1rem;
+    }
+
+    .balance-value {
+      font-size: 1.2rem;
+      font-weight: bold;
+    }
+
+    .tx-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 1rem;
+    }
+
+    .tx-table th,
+    .tx-table td {
+      padding: 0.75rem;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      text-align: center;
+    }
+
+    .tx-table th {
+      background: rgba(255, 255, 255, 0.05);
+    }
+
+    .loading {
+      text-align: center;
+      padding: 2rem;
+      color: #9ca3af;
+    }
+
+    .wallet-warning {
+      text-align: center;
+      padding: 1.5rem;
+      color: #ef4444;
+      font-weight: 600;
+    }
+  </style>
+</head>
+<body>
+  <!-- Wallet Connection Modal -->
+  <div id="walletModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 class="modal-title">Connect Wallet</h2>
+        <button class="close" id="closeModal">&times;</button>
+      </div>
+      <div id="walletOptions">
+        <div class="wallet-option" data-wallet="metamask">
+          <div class="wallet-icon">🦊</div>
+          <div class="wallet-info">
+            <h3>MetaMask</h3>
+            <p>Popular wallet with browser extension</p>
+          </div>
+        </div>
+        <div class="wallet-option" data-wallet="walletconnect">
+          <div class="wallet-icon">🔗</div>
+          <div class="wallet-info">
+            <h3>WalletConnect</h3>
+            <p>Connect with mobile wallets</p>
+          </div>
+        </div>
+        <div class="wallet-option" data-wallet="coinbase">
+          <div class="wallet-icon">🔷</div>
+          <div class="wallet-info">
+            <h3>Coinbase Wallet</h3>
+            <p>Official Coinbase wallet</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Navigation -->
+  <nav class="navbar">
+    <div class="container">
+      <div class="nav-content">
+        <div class="logo">🌌 SomniaDexfi</div>
+        <ul class="nav-tabs">
+          <li class="nav-tab active" data-page="dex">DEX</li>
+          <li class="nav-tab" data-page="swap">Swap</li>
+          <li class="nav-tab" data-page="ramp">Ramp</li>
+          <li class="nav-tab" data-page="pairs">Liquidity</li>
+          <li class="nav-tab" data-page="portfolio">Portfolio</li>
+        </ul>
+        <div class="wallet-section">
+          <div class="network-indicator" id="networkIndicator">
+            <div class="network-dot"></div>
+            <span id="networkName">Not Connected</span>
+          </div>
+          <button class="wallet-connect" id="connectWallet">Connect Wallet</button>
+          <div class="wallet-connected" id="walletConnected" style="display:none;">
+            <div class="wallet-avatar" id="walletAvatar">M</div>
+            <span id="walletAddress">0x1234...5678</span>
+            <button class="btn btn-secondary" id="disconnectBtn" style="padding:0.5rem;">×</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Tab container -->
+  <div class="container">
+    <div id="tabContainer" class="main-content">
+      <!-- Content will be loaded here -->
+    </div>
+  </div>
+
+  <!-- Status message container -->
+  <div id="statusContainer"></div>
+
+  <script>
+    // =======================
+    // Network Configurations
+    // =======================
+    const NETWORK_CONFIGS = {
+      mainnet: {
+        chainId: 5031,
+        name: 'Somnia Mainnet',
+        symbol: 'SOMI',
+        rpcUrl: 'https://api.infra.mainnet.somnia.network/',
+        blockExplorer: 'https://explorer.somnia.network',
+        multicall: '0x5e44F178E8cF9B2F5409B6f18ce936aB817C5a11',
+        tokens: {
+          MTX: '0x0420b7272B146816851de0A3Df10F957ea282197',
+          USDT: '0x55d398326f99059fF775485246999027B3197955',
+          USDC: '0x8AC76a51cc950d9822D68b83fE1Ad97B32Cd580d'
+        },
+        flutterwave: {
+          publicKey: 'FLWPUBK-9535229707e778e50c2265f91e25f0bd-X' // Replace with live key
+        }
+      },
+      testnet: {
+        chainId: 50312,
+        name: 'Somnia Testnet',
+        symbol: 'STT',
+        rpcUrl: 'https://dream-rpc.somnia.network/',
+        blockExplorer: 'https://shannon-explorer.somnia.network/',
+        multicall: '0x841b8199E6d3Db3C6f264f6C2bd8848b3cA64223',
+        tokens: {
+          MTX: '0x1234567890123456789012345678901234567890', // Test token addresses
+          USDT: '0x2345678901234567890123456789012345678901',
+          USDC: '0x3456789012345678901234567890123456789012'
+        },
+        flutterwave: {
+          publicKey: 'FLWPUBK_TEST-2e1916b73be8b0d2011af6d4366e00b2-X' // Replace with test key
+        }
+      }
+    };
+
+    // ERC20 ABI (minimal)
+    const ERC20_ABI = [
+      "function balanceOf(address owner) view returns (uint256)",
+      "function decimals() view returns (uint8)",
+      "function symbol() view returns (string)",
+      "function transfer(address to, uint256 amount) returns (bool)",
+      "function approve(address spender, uint256 amount) returns (bool)",
+      "function allowance(address owner, address spender) view returns (uint256)"
+    ];
+
+    // Simple DEX Router ABI (for swaps)
+    const ROUTER_ABI = [
+      "function swapExactTokensForTokens(uint amountIn, uint amountOutMin, address[] calldata path, address to, uint deadline) external returns (uint[] memory amounts)",
+      "function getAmountsOut(uint amountIn, address[] calldata path) external view returns (uint[] memory amounts)"
+    ];
+
+    // =======================
+    // SomniaDex Main Class
+    // =======================
+    class SomniaDex {
+      constructor() {
+        this.provider = null;
+        this.signer = null;
+        this.account = null;
+        this.walletName = null;
+        this.network = null;
+        this.chainId = null;
+        this.currentNetwork = this.getNetworkFromUrl();
+        this.config = NETWORK_CONFIGS[this.currentNetwork];
+        
+        this.init();
+      }
+
+      getNetworkFromUrl() {
+        const urlParams = new URLSearchParams(window.location.search);
+        return urlParams.get('network') === 'testnet' ? 'testnet' : 'mainnet';
+      }
+      
+      init() {
+        this.bindEvents();
+        this.loadDefaultPage();
+        this.tryReconnectWallet();
+      }
+      
+      bindEvents() {
+        // Modal events
+        document.getElementById('connectWallet').addEventListener('click', () => this.showWalletModal());
+        document.getElementById('closeModal').addEventListener('click', () => this.hideWalletModal());
+        document.getElementById('disconnectBtn').addEventListener('click', () => this.disconnectWallet());
+        
+        // Wallet selection
+        document.querySelectorAll('.wallet-option').forEach(option => {
+          option.addEventListener('click', (e) => {
+            const walletType = e.currentTarget.getAttribute('data-wallet');
+            this.connectWallet(walletType);
+          });
+        });
+        
+        // Tab switching
+        document.querySelectorAll('.nav-tab').forEach(tab => {
+          tab.addEventListener('click', (e) => {
+            const page = e.target.getAttribute('data-page');
+            this.loadPage(page);
+            this.setActiveTab(e.target);
+          });
+        });
+        
+        // Listen for account changes
+        if (window.ethereum) {
+          window.ethereum.on('accountsChanged', (accounts) => {
+            if (accounts.length === 0) {
+              this.disconnectWallet();
+            } else if (accounts[0] !== this.account) {
+              this.handleAccountChange(accounts[0]);
+            }
+          });
+          
+          window.ethereum.on('chainChanged', (chainId) => {
+            this.handleChainChange(chainId);
+          });
+        }
+      }
+      
+      loadDefaultPage() {
+        this.loadPage('dex');
+      }
+      
+      loadPage(page) {
+        switch(page) {
+          case 'dex':
+            this.loadDexPage();
+            break;
+          case 'swap':
+            this.loadSwapPage();
+            break;
+          case 'ramp':
+            this.loadRampPage();
+            break;
+          case 'pairs':
+            this.loadPairsPage();
+            break;
+          case 'portfolio':
+            this.loadPortfolioPage();
+            break;
+          default:
+            this.loadDexPage();
+        }
+      }
+
+      loadDexPage() {
+        const content = `
+          <div class="trading-header">
+            <div>
+              <h1>Trade on SomniaDexfi</h1>
+              <p>Discover and trade verified and community token pairs on ${this.config.name}</p>
+            </div>
+            <div class="market-stats">
+              <div class="stat-item">
+                <div class="stat-value" id="totalVolume">$2.4M</div>
+                <div class="stat-label">24h Volume</div>
+              </div>
+              <div class="stat-item">
+                <div class="stat-value" id="totalPairs">12</div>
+                <div class="stat-label">Active Pairs</div>
+              </div>
+              <div class="stat-item">
+                <div class="stat-value" id="totalLiquidity">$8.7M</div>
+                <div class="stat-label">Total Liquidity</div>
+              </div>
+            </div>
+          </div>
+        
+          <div class="card">
+            <h3 class="card-title">📊 Market Pairs</h3>
+            <div class="pair-list" id="marketPairs">
+              <div class="pair-header">
+                <span>Pair</span>
+                <span>Status</span>
+                <span>Price</span>
+                <span>24h Change</span>
+                <span>24h Volume</span>
+                <span>Action</span>
+              </div>
+        
+              <div class="pair-row">
+                <span><strong>${this.config.symbol} / MTX</strong></span>
+                <span><span class="badge verified">Verified</span></span>
+                <span>$0.0032</span>
+                <span class="positive">+12.5%</span>
+                <span>$450K</span>
+                <span><button class="btn-trade" onclick="somniaDex.loadPage('swap')">Trade</button></span>
+              </div>
+        
+              <div class="pair-row">
+                <span><strong>MTX / USDT</strong></span>
+                <span><span class="badge verified">Verified</span></span>
+                <span>$0.0031</span>
+                <span class="negative">-2.3%</span>
+                <span>$320K</span>
+                <span><button class="btn-trade" onclick="somniaDex.loadPage('swap')">Trade</button></span>
+              </div>
+
+              <div class="pair-row">
+                <span><strong>MTX / USDC</strong></span>
+                <span><span class="badge community">Community</span></span>
+                <span>$0.0030</span>
+                <span class="positive">+5.7%</span>
+                <span>$180K</span>
+                <span><button class="btn-trade" onclick="somniaDex.loadPage('swap')">Trade</button></span>
+              </div>
+            </div>
+          </div>
+        `;
+        document.getElementById('tabContainer').innerHTML = content;
+      }
+
+      loadSwapPage() {
+        const tokens = Object.keys(this.config.tokens);
+        tokens.unshift(this.config.symbol); // Add native token
+        
+        const tokenOptions = tokens.map(token => 
+          `<option value="${token}">${token}</option>`
+        ).join('');
+
+        const content = `
+          <div class="swap-container">
+            <div class="card">
+              <h3 class="card-title">🔄 Swap Tokens</h3>
+        
+              <!-- From -->
+              <div class="swap-group">
+                <input type="number" id="fromAmount" placeholder="0.0" />
+                <select id="fromToken" class="token-select">
+                  ${tokenOptions}
+                </select>
+              </div>
+        
+              <!-- Reverse -->
+              <button class="reverse-btn" id="reverseBtn">⇅</button>
+        
+              <!-- To -->
+              <div class="swap-group">
+                <input type="number" id="toAmount" placeholder="0.0" readonly />
+                <select id="toToken" class="token-select">
+                  ${tokenOptions}
+                </select>
+              </div>
+        
+              <!-- Swap Info -->
+              <div id="swapInfo" style="background: rgba(255,255,255,0.05); padding: 1rem; border-radius: 8px; margin: 1rem 0; display: none;">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                  <span>Rate:</span>
+                  <span id="swapRate">-</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                  <span>Network Fee:</span>
+                  <span id="networkFee">~0.001 ${this.config.symbol}</span>
+                </div>
+              </div>
+        
+              <!-- Swap -->
+              <button class="btn" id="swapBtn">Swap Tokens</button>
+        
+              <!-- Status -->
+              <div id="swapStatus" class="status" style="display: none;"></div>
+            </div>
+          </div>
+        `;
+        document.getElementById('tabContainer').innerHTML = content;
+        this.initSwapHandlers();
+      }
+
+      loadRampPage() {
+        const content = `
+          <div class="ramp-container">
+            <div class="card">
+              <h3 class="card-title">💳 Fiat On/Off Ramp</h3>
+              <p style="text-align: center; margin-bottom: 1.5rem; color: #9ca3af;">
+                Buy crypto with fiat currency using Flutterwave
+              </p>
+        
+              <!-- Toggle Buy/Sell -->
+              <div class="toggle-group">
+                <div class="toggle-btn active" id="buyBtn">Buy Crypto</div>
+                <div class="toggle-btn" id="sellBtn">Sell Crypto</div>
+              </div>
+        
+              <!-- Form -->
+              <form id="rampForm">
+                <div class="form-group">
+                  <label for="fiatAmount">Amount (Fiat)</label>
+                  <input type="number" id="fiatAmount" placeholder="Enter amount" required />
+                </div>
+        
+                <div class="form-group">
+                  <label for="fiatCurrency">Currency</label>
+                  <select id="fiatCurrency">
+                    <option value="NGN">NGN - Nigerian Naira</option>
+                    <option value="USD">USD - US Dollar</option>
+                    <option value="EUR">EUR - Euro</option>
+                    <option value="GBP">GBP - British Pound</option>
+                  </select>
+                </div>
+        
+                <div class="form-group">
+                  <label for="cryptoToken">Receive Token</label>
+                  <select id="cryptoToken">
+                    <option value="MTX">MTX - MyTokenX</option>
+                    <option value="${this.config.symbol}">${this.config.symbol} - ${this.config.name}</option>
+                  </select>
+                </div>
+
+                <div class="form-group">
+                  <label for="userEmail">Email Address</label>
+                  <input type="email" id="userEmail" placeholder="your@email.com" required />
+                </div>
+
+                <div class="form-group">
+                  <label for="userName">Full Name</label>
+                  <input type="text" id="userName" placeholder="Your full name" required />
+                </div>
+        
+                <button type="submit" class="btn" id="checkoutBtn">
+                  <span id="checkoutText">Proceed to Payment</span>
+                </button>
+                <div id="rampStatus" class="status" style="display: none;"></div>
+              </form>
+            </div>
+          </div>
+        `;
+        document.getElementById('tabContainer').innerHTML = content;
+        this.initRampHandlers();
+      }
+
+      loadPairsPage() {
+        const tokens = Object.keys(this.config.tokens);
+        tokens.unshift(this.config.symbol);
+        
+        const tokenOptions = tokens.map(token => 
+          `<option value="${token}">${token}</option>`
+        ).join('');
+
+        const content = `
+          <div class="card">
+            <h3 class="card-title">🌀 Create New Pair</h3>
+            <form id="createPairForm">
+              <div class="form-group">
+                <label for="tokenA">Token A</label>
+                <select id="tokenA" required>
+                  ${tokenOptions}
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="tokenB">Token B</label>
+                <select id="tokenB" required>
+                  ${tokenOptions}
+                </select>
+              </div>
+              <button type="submit" class="btn">Create Pair</button>
+            </form>
+            <div id="pairStatus" class="status" style="display: none;"></div>
+          </div>
+        
+          <div class="card">
+            <h3 class="card-title">💧 Add Liquidity</h3>
+            <form id="addLiquidityForm">
+              <div class="form-group">
+                <label for="liquidityPair">Select Pair</label>
+                <select id="liquidityPair">
+                  <option value="${this.config.symbol}/MTX">${this.config.symbol} / MTX</option>
+                  <option value="MTX/USDT">MTX / USDT</option>
+                  <option value="MTX/USDC">MTX / USDC</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="amountA">Amount Token A</label>
+                <input type="number" id="amountA" placeholder="Enter amount" required>
+              </div>
+              <div class="form-group">
+                <label for="amountB">Amount Token B</label>
+                <input type="number" id="amountB" placeholder="Enter amount" required>
+              </div>
+              <button type="submit" class="btn">Add Liquidity</button>
+            </form>
+            <div id="liquidityStatus" class="status" style="display: none;"></div>
+          </div>
+        `;
+        document.getElementById('tabContainer').innerHTML = content;
+        this.initPairsHandlers();
+      }
+
+      loadPortfolioPage() {
+        const content = `
+          <div class="wallet-container">
+            <div class="wallet-card">
+              <h3 class="wallet-title">💛 My Portfolio</h3>
+        
+              <div id="walletInfo" style="text-align: center; margin-bottom: 1rem; display: none;">
+                <p>Connected with: <span id="connectedWalletName"></span></p>
+                <p>Network: <span id="connectedNetwork"></span></p>
+                <p>Address: <span id="connectedAddress"></span></p>
+              </div>
+        
+              <div id="walletWarning" class="wallet-warning" style="display:none;">
+                Wallet Not Connected.<br>
+                Please connect your wallet using the button in the navigation bar to view your portfolio.
+              </div>
+        
+              <button id="walletBtn" class="btn">Connect Wallet</button>
+        
+              <div id="balances" style="display: none;">
+                <h4 style="text-align:center; margin:1rem 0;">Balances</h4>
+                <div class="balances" id="balancesList">
+                  <!-- Balances will be populated here -->
+                </div>
+              </div>
+        
+              <div id="loading" class="loading" style="display: none;">
+                Loading wallet data...
+              </div>
+        
+              <div id="transactions" style="display: none;">
+                <h4 style="text-align:center; margin:1rem 0;">Recent Transactions</h4>
+                <table class="tx-table">
+                  <thead>
+                    <tr>
+                      <th>Type</th>
+                      <th>Token</th>
+                      <th>Amount</th>
+                      <th>Status</th>
+                    </tr>
+                  </thead>
+                  <tbody id="txBody"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        `;
+        document.getElementById('tabContainer').innerHTML = content;
+        this.initPortfolioHandlers();
+      }
+
+      initSwapHandlers() {
+        const fromAmount = document.getElementById('fromAmount');
+        const toAmount = document.getElementById('toAmount');
+        const fromToken = document.getElementById('fromToken');
+        const toToken = document.getElementById('toToken');
+        const reverseBtn = document.getElementById('reverseBtn');
+        const swapBtn = document.getElementById('swapBtn');
+        const swapStatus = document.getElementById('swapStatus');
+        const swapInfo = document.getElementById('swapInfo');
+        const swapRate = document.getElementById('swapRate');
+
+        // Mock rates for demo
+        const mockRates = {
+          [`${this.config.symbol}/MTX`]: 3200,
+          [`MTX/${this.config.symbol}`]: 1/3200,
+          [`MTX/USDT`]: 0.003,
+          [`USDT/MTX`]: 1/0.003,
+          [`MTX/USDC`]: 0.003,
+          [`USDC/MTX`]: 1/0.003,
+        };
+
+        function updateToAmount() {
+          const amount = parseFloat(fromAmount.value);
+          if (!amount || amount <= 0) {
+            toAmount.value = '';
+            swapInfo.style.display = 'none';
+            return;
+          }
+          
+          if (fromToken.value === toToken.value) {
+            toAmount.value = '';
+            swapInfo.style.display = 'none';
+            return;
+          }
+
+          const pair = `${fromToken.value}/${toToken.value}`;
+          const rate = mockRates[pair] || 1;
+          const result = (amount * rate).toFixed(6);
+          
+          toAmount.value = result;
+          swapRate.textContent = `1 ${fromToken.value} = ${rate.toFixed(6)} ${toToken.value}`;
+          swapInfo.style.display = 'block';
+        }
+
+        fromAmount.addEventListener('input', updateToAmount);
+        fromToken.addEventListener('change', updateToAmount);
+        toToken.addEventListener('change', updateToAmount);
+
+        reverseBtn.addEventListener('click', () => {
+          const temp = fromToken.value;
+          fromToken.value = toToken.value;
+          toToken.value = temp;
+          updateToAmount();
+        });
+
+        swapBtn.addEventListener('click', async () => {
+          if (!this.account) {
+            this.showStatus('Please connect your wallet first', 'error');
+            return;
+          }
+
+          const amount = fromAmount.value;
+          if (!amount || amount <= 0) {
+            this.showStatus('Please enter a valid amount', 'error');
+            return;
+          }
+
+          if (fromToken.value === toToken.value) {
+            this.showStatus('Cannot swap the same token', 'error');
+            return;
+          }
+
+          try {
+            swapBtn.disabled = true;
+            swapBtn.textContent = 'Swapping...';
+            this.showStatus('Processing swap...', 'loading');
+
+            // Here you would implement actual swap logic
+            await new Promise(resolve => setTimeout(resolve, 2000));
+
+            this.showStatus(`✅ Swapped ${amount} ${fromToken.value} → ${toAmount.value} ${toToken.value}`, 'success');
+            
+          } catch (error) {
+            console.error('Swap error:', error);
+            this.showStatus('Swap failed: ' + error.message, 'error');
+          } finally {
+            swapBtn.disabled = false;
+            swapBtn.textContent = 'Swap Tokens';
+          }
+        });
+      }
+
+
+      /* initRampHandlers() {
+        const buyBtn = document.getElementById('buyBtn');
+        const sellBtn = document.getElementById('sellBtn');
+        const rampForm = document.getElementById('rampForm');
+        const rampStatus = document.getElementById('rampStatus');
+        const checkoutBtn = document.getElementById('checkoutBtn');
+        let mode = 'buy';
+
+        buyBtn.addEventListener('click', () => {
+          mode = 'buy';
+          buyBtn.classList.add('active');
+          sellBtn.classList.remove('active');
+          document.getElementById('checkoutText').textContent = 'Buy Crypto';
+        });
+
+        sellBtn.addEventListener('click', () => {
+          mode = 'sell';
+          sellBtn.classList.add('active');
+          buyBtn.classList.remove('active');
+          document.getElementById('checkoutText').textContent = 'Sell Crypto';
+        });
+
+        rampForm.addEventListener('submit', (e) => {
+          e.preventDefault();
+          this.handleFlutterwavePayment(mode);
+        });
+      }
+
+      async handleFlutterwavePayment(mode) {
+        const fiatAmount = document.getElementById('fiatAmount').value;
+        const fiatCurrency = document.getElementById('fiatCurrency').value;
+        const cryptoToken = document.getElementById('cryptoToken').value;
+        const userEmail = document.getElementById('userEmail').value;
+        const userName = document.getElementById('userName').value;
+        const rampStatus = document.getElementById('rampStatus');
+
+        if (!fiatAmount || !userEmail || !userName) {
+          rampStatus.textContent = '❌ Please fill in all required fields';
+          rampStatus.className = 'status error';
+          rampStatus.style.display = 'block';
+          return;
+        }
+
+        if (mode === 'sell' && !this.account) {
+          rampStatus.textContent = '❌ Please connect your wallet to sell crypto';
+          rampStatus.className = 'status error';
+          rampStatus.style.display = 'block';
+          return;
+        }
+
+        const config = {
+          public_key: this.config.flutterwave.publicKey,
+          tx_ref: `somnia-${mode}-${Date.now()}`,
+          amount: parseFloat(fiatAmount),
+          currency: fiatCurrency,
+          customer: {
+            email: userEmail,
+            name: userName,
+          },
+          customizations: {
+            title: `SomniaDexfi - ${mode === 'buy' ? 'Buy' : 'Sell'} ${cryptoToken}`,
+            description: `${mode === 'buy' ? 'Purchase' : 'Sell'} ${cryptoToken} tokens`,
+            logo: 'https://your-logo-url.com/logo.png',
+          },
+          callback: (response) => {
+            this.handlePaymentCallback(response, mode, cryptoToken, fiatAmount);
+          },
+          onclose: () => {
+            rampStatus.textContent = '❌ Payment cancelled';
+            rampStatus.className = 'status error';
+            rampStatus.style.display = 'block';
+          },
+        };
+
+        FlutterwaveCheckout(config);
+      }
+
+      async handlePaymentCallback(response, mode, cryptoToken, fiatAmount) {
+        const rampStatus = document.getElementById('rampStatus');
+        
+        if (response.status === 'successful') {
+          rampStatus.textContent = '⏳ Payment successful! Processing token transfer...';
+          rampStatus.className = 'status loading';
+          rampStatus.style.display = 'block';
+
+          if (mode === 'buy') {
+            // Simulate token transfer after successful payment
+            try {
+              await this.sendTokensToUser(cryptoToken, fiatAmount);
+              rampStatus.textContent = `✅ Success! ${cryptoToken} tokens sent to your wallet`;
+              rampStatus.className = 'status success';
+            } catch (error) {
+              console.error('Token transfer error:', error);
+              rampStatus.textContent = '❌ Payment successful but token transfer failed. Contact support.';
+              rampStatus.className = 'status error';
+            }
+          } else {
+            rampStatus.textContent = `✅ Sale completed! You received ${fiatAmount} in your account`;
+            rampStatus.className = 'status success';
+          }
+        } else {
+          rampStatus.textContent = '❌ Payment failed. Please try again.';
+          rampStatus.className = 'status error';
+          rampStatus.style.display = 'block';
+        }
+      }
+ */
+      
+      
+ initRampHandlers() {
+  const buyBtn = document.getElementById('buyBtn');
+  const sellBtn = document.getElementById('sellBtn');
+  const rampForm = document.getElementById('rampForm');
+  const rampStatus = document.getElementById('rampStatus');
+  const checkoutBtn = document.getElementById('checkoutBtn');
+  let mode = 'buy';
+
+  buyBtn.addEventListener('click', () => {
+    mode = 'buy';
+    buyBtn.classList.add('active');
+    sellBtn.classList.remove('active');
+    document.getElementById('checkoutText').textContent = 'Buy Crypto';
+  });
+
+  sellBtn.addEventListener('click', () => {
+    mode = 'sell';
+    sellBtn.classList.add('active');
+    buyBtn.classList.remove('active');
+    document.getElementById('checkoutText').textContent = 'Sell Crypto';
+  });
+
+  rampForm.addEventListener('submit', (e) => {
+    e.preventDefault();
+    this.handleFlutterwavePayment(mode);
+  });
+}
+
+async handleFlutterwavePayment(mode) {
+  const fiatAmount = document.getElementById('fiatAmount').value;
+  const fiatCurrency = document.getElementById('fiatCurrency').value;
+  const cryptoToken = document.getElementById('cryptoToken').value;
+  const userEmail = document.getElementById('userEmail').value;
+  const userName = document.getElementById('userName').value;
+  const rampStatus = document.getElementById('rampStatus');
+
+  if (!fiatAmount || !userEmail || !userName) {
+    rampStatus.textContent = '❌ Please fill in all required fields';
+    rampStatus.className = 'status error';
+    rampStatus.style.display = 'block';
+    return;
+  }
+
+  if (mode === 'sell' && !this.account) {
+    rampStatus.textContent = '❌ Please connect your wallet to sell crypto';
+    rampStatus.className = 'status error';
+    rampStatus.style.display = 'block';
+    return;
+  }
+
+  const txRef = `somnia-${mode}-${Date.now()}`;
+  
+  const config = {
+    public_key: this.config.flutterwave.publicKey,
+    tx_ref: txRef,
+    amount: parseFloat(fiatAmount),
+    currency: fiatCurrency,
+    customer: {
+      email: userEmail,
+      name: userName,
+    },
+    customizations: {
+      title: `SomniaDexfi - ${mode === 'buy' ? 'Buy' : 'Sell'} ${cryptoToken}`,
+      description: `${mode === 'buy' ? 'Purchase' : 'Sell'} ${cryptoToken} tokens`,
+      logo: 'https://your-logo-url.com/logo.png',
+    },
+    callback: (response) => {
+      this.handlePaymentCallback(response, mode, cryptoToken, fiatAmount, fiatCurrency, txRef);
+    },
+    onclose: () => {
+      rampStatus.textContent = '❌ Payment cancelled';
+      rampStatus.className = 'status error';
+      rampStatus.style.display = 'block';
+    },
+  };
+
+  FlutterwaveCheckout(config);
+}
+
+async handlePaymentCallback(response, mode, cryptoToken, fiatAmount, fiatCurrency, txRef) {
+  const rampStatus = document.getElementById('rampStatus');
+  
+  if (response.status === 'successful') {
+    rampStatus.textContent = '⏳ Payment successful! Processing token transfer...';
+    rampStatus.className = 'status loading';
+    rampStatus.style.display = 'block';
+
+    try {
+      // Send payment details to backend for token processing
+      const backendResponse = await fetch(`${this.config.api}/send_tokens`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          transactionId: response.transaction_id || txRef,
+          status: response.status,
+          mode: mode,
+          token: cryptoToken,
+          amount: fiatAmount,
+          currency: fiatCurrency,
+          userEmail: document.getElementById('userEmail').value,
+          userName: document.getElementById('userName').value,
+          walletAddress: this.account || null
+        })
+      });
+
+      const result = await backendResponse.json();
+
+      if (backendResponse.ok && result.success) {
+        if (mode === 'buy') {
+          rampStatus.textContent = `✅ Success! ${result.tokenAmount || cryptoToken} tokens sent to your wallet`;
+        } else {
+          rampStatus.textContent = `✅ Sale completed! You received ${fiatAmount} ${fiatCurrency} in your account`;
+        }
+        rampStatus.className = 'status success';
+      } else {
+        rampStatus.textContent = '❌ Payment successful but backend processing failed. Contact support.';
+        rampStatus.className = 'status error';
+        console.error('Backend error:', result.error);
+      }
+    } catch (error) {
+      console.error('Token processing error:', error);
+      rampStatus.textContent = '❌ Payment successful but token processing failed. Contact support.';
+      rampStatus.className = 'status error';
+    }
+  } else {
+    rampStatus.textContent = '❌ Payment failed. Please try again.';
+    rampStatus.className = 'status error';
+    rampStatus.style.display = 'block';
+  }
+}
+
+    async sendTokensToUser(tokenSymbol, fiatAmount) {
+        if (!this.account) return;
+
+        // Calculate token amount based on fiat amount (simplified calculation)
+        const tokenRate = tokenSymbol === 'MTX' ? 0.003 : 1; // $0.003 per MTX
+        const tokenAmount = (parseFloat(fiatAmount) / tokenRate).toFixed(6);
+
+        // In a real implementation, this would be handled by your backend
+        // after verifying the Flutterwave payment
+        console.log(`Sending ${tokenAmount} ${tokenSymbol} to ${this.account}`);
+        
+        // Simulate delay
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        
+        return { success: true, tokenAmount };
+      }
+
+      initPairsHandlers() {
+        const createPairForm = document.getElementById('createPairForm');
+        const addLiquidityForm = document.getElementById('addLiquidityForm');
+        const pairStatus = document.getElementById('pairStatus');
+        const liquidityStatus = document.getElementById('liquidityStatus');
+
+        createPairForm.addEventListener('submit', async (e) => {
+          e.preventDefault();
+          
+          if (!this.account) {
+            this.showStatus('Please connect your wallet first', 'error');
+            return;
+          }
+
+          const tokenA = document.getElementById('tokenA').value;
+          const tokenB = document.getElementById('tokenB').value;
+
+          if (tokenA === tokenB) {
+            pairStatus.textContent = '❌ Please select different tokens';
+            pairStatus.className = 'status error';
+            pairStatus.style.display = 'block';
+            return;
+          }
+
+          try {
+            pairStatus.textContent = '⏳ Creating pair...';
+            pairStatus.className = 'status loading';
+            pairStatus.style.display = 'block';
+
+            // Simulate pair creation
+            await new Promise(resolve => setTimeout(resolve, 2000));
+
+            pairStatus.textContent = `✅ Pair created successfully: ${tokenA}/${tokenB}`;
+            pairStatus.className = 'status success';
+
+          } catch (error) {
+            console.error('Create pair error:', error);
+            pairStatus.textContent = 'Failed to create pair: ' + error.message;
+            pairStatus.className = 'status error';
+          }
+        });
+
+        addLiquidityForm.addEventListener('submit', async (e) => {
+          e.preventDefault();
+          
+          if (!this.account) {
+            this.showStatus('Please connect your wallet first', 'error');
+            return;
+          }
+
+          const pair = document.getElementById('liquidityPair').value;
+          const amountA = document.getElementById('amountA').value;
+          const amountB = document.getElementById('amountB').value;
+
+          if (!amountA || !amountB || amountA <= 0 || amountB <= 0) {
+            liquidityStatus.textContent = '❌ Enter valid amounts for both tokens';
+            liquidityStatus.className = 'status error';
+            liquidityStatus.style.display = 'block';
+            return;
+          }
+
+          try {
+            liquidityStatus.textContent = '⏳ Adding liquidity...';
+            liquidityStatus.className = 'status loading';
+            liquidityStatus.style.display = 'block';
+
+            // Simulate liquidity addition
+            await new Promise(resolve => setTimeout(resolve, 2000));
+
+            liquidityStatus.textContent = `✅ Added ${amountA} + ${amountB} liquidity to ${pair} pool`;
+            liquidityStatus.className = 'status success';
+
+          } catch (error) {
+            console.error('Add liquidity error:', error);
+            liquidityStatus.textContent = 'Failed to add liquidity: ' + error.message;
+            liquidityStatus.className = 'status error';
+          }
+        });
+      }
+
+      initPortfolioHandlers() {
+        const walletBtn = document.getElementById('walletBtn');
+        const walletInfo = document.getElementById('walletInfo');
+        const walletWarning = document.getElementById('walletWarning');
+
+        walletBtn.addEventListener('click', () => {
+          if (walletBtn.textContent === 'Connect Wallet') {
+            this.showWalletModal();
+          } else if (this.account) {
+            this.loadWalletData();
+          }
+        });
+
+        if (this.account) {
+          this.loadWalletData();
+        } else {
+          this.showWalletWarning();
+        }
+      }
+
+      async loadWalletData() {
+        if (!this.account) {
+          this.showWalletWarning();
+          return;
+        }
+
+        const walletInfo = document.getElementById('walletInfo');
+        const balancesSection = document.getElementById('balances');
+        const loadingSection = document.getElementById('loading');
+        const walletWarning = document.getElementById('walletWarning');
+        const walletBtn = document.getElementById('walletBtn');
+
+        walletWarning.style.display = 'none';
+        loadingSection.style.display = 'block';
+        balancesSection.style.display = 'none';
+
+        document.getElementById('connectedWalletName').textContent = this.walletName;
+        document.getElementById('connectedNetwork').textContent = this.config.name;
+        document.getElementById('connectedAddress').textContent = 
+          `${this.account.substring(0, 8)}...${this.account.slice(-6)}`;
+        
+        walletInfo.style.display = 'block';
+        walletBtn.textContent = 'Refresh Portfolio';
+
+        try {
+          const balancesList = document.getElementById('balancesList');
+          balancesList.innerHTML = '';
+
+          // Get native token balance
+          const nativeBalance = await this.provider.getBalance(this.account);
+          const nativeFormatted = ethers.utils.formatEther(nativeBalance);
+
+          const nativeBalanceDiv = document.createElement('div');
+          nativeBalanceDiv.className = 'balance-item';
+          nativeBalanceDiv.innerHTML = `
+            <h4>${this.config.symbol}</h4>
+            <div class="balance-value">${parseFloat(nativeFormatted).toFixed(4)} ${this.config.symbol}</div>
+          `;
+          balancesList.appendChild(nativeBalanceDiv);
+
+          // Get ERC20 token balances
+          for (const [symbol, address] of Object.entries(this.config.tokens)) {
+            try {
+              const contract = new ethers.Contract(address, ERC20_ABI, this.provider);
+              const balance = await contract.balanceOf(this.account);
+              const decimals = await contract.decimals();
+              const formatted = ethers.utils.formatUnits(balance, decimals);
+
+              const balanceDiv = document.createElement('div');
+              balanceDiv.className = 'balance-item';
+              balanceDiv.innerHTML = `
+                <h4>${symbol}</h4>
+                <div class="balance-value">${parseFloat(formatted).toFixed(4)} ${symbol}</div>
+              `;
+              balancesList.appendChild(balanceDiv);
+            } catch (error) {
+              console.error(`Error fetching ${symbol} balance:`, error);
+            }
+          }
+
+          loadingSection.style.display = 'none';
+          balancesSection.style.display = 'block';
+
+        } catch (error) {
+          console.error('Error loading wallet data:', error);
+          loadingSection.style.display = 'none';
+          this.showStatus('Failed to load wallet data', 'error');
+        }
+      }
+
+      showWalletWarning() {
+        const walletInfo = document.getElementById('walletInfo');
+        const balancesSection = document.getElementById('balances');
+        const walletWarning = document.getElementById('walletWarning');
+        const walletBtn = document.getElementById('walletBtn');
+
+        walletInfo.style.display = 'none';
+        balancesSection.style.display = 'none';
+        walletWarning.style.display = 'block';
+        walletBtn.textContent = 'Connect Wallet';
+      }
+      
+      setActiveTab(activeTab) {
+        document.querySelectorAll('.nav-tab').forEach(tab => tab.classList.remove('active'));
+        activeTab.classList.add('active');
+      }
+      
+      showWalletModal() {
+        document.getElementById('walletModal').style.display = 'block';
+      }
+      
+      hideWalletModal() {
+        document.getElementById('walletModal').style.display = 'none';
+      }
+
+      async tryReconnectWallet() {
+        const storedWallet = localStorage.getItem('somniaDex_wallet');
+        if (!storedWallet) return;
+
+        try {
+          const walletData = JSON.parse(storedWallet);
+          if (walletData.account && walletData.walletName) {
+            await this.reconnectWallet(walletData);
+          }
+        } catch (error) {
+          console.error('Error reconnecting wallet:', error);
+          localStorage.removeItem('somniaDex_wallet');
+        }
+      }
+      
+      async reconnectWallet(walletData) {
+        try {
+          if (!window.ethereum) {
+            throw new Error('No Ethereum provider found');
+          }
+          
+          const accounts = await window.ethereum.request({ method: 'eth_accounts' });
+          
+          if (accounts.length > 0 && accounts[0].toLowerCase() === walletData.account.toLowerCase()) {
+            this.provider = new ethers.providers.Web3Provider(window.ethereum);
+            this.signer = this.provider.getSigner();
+            this.account = accounts[0];
+            this.walletName = walletData.walletName;
+            
+            const network = await this.provider.getNetwork();
+            this.network = network.name;
+            this.chainId = network.chainId;
+            
+            this.updateUI();
+            this.showStatus(`Reconnected to ${this.walletName}`, 'success');
+            
+            console.log('Wallet reconnected:', this.account, 'Network:', this.network);
+          } else {
+            localStorage.removeItem('somniaDex_wallet');
+            throw new Error('Wallet connection changed');
+          }
+        } catch (error) {
+          console.error('Wallet reconnection failed:', error);
+          localStorage.removeItem('somniaDex_wallet');
+        }
+      }
+      
+      async connectWallet(walletType) {
+        try {
+          let provider;
+          
+          switch(walletType) {
+            case 'metamask':
+              if (!window.ethereum || !window.ethereum.isMetaMask) {
+                throw new Error('MetaMask not found. Please install MetaMask.');
+              }
+              provider = window.ethereum;
+              this.walletName = 'MetaMask';
+              break;
+              
+            case 'walletconnect':
+              this.showStatus('WalletConnect integration coming soon!', 'loading');
+              return;
+              
+            case 'coinbase':
+              if (!window.ethereum || !window.ethereum.isCoinbaseWallet) {
+                throw new Error('Coinbase Wallet not found.');
+              }
+              provider = window.ethereum;
+              this.walletName = 'Coinbase Wallet';
+              break;
+              
+            default:
+              throw new Error('Unsupported wallet type');
+          }
+          
+          const accounts = await provider.request({ method: 'eth_requestAccounts' });
+          
+          if (accounts.length === 0) {
+            throw new Error('No accounts found');
+          }
+          
+          this.provider = new ethers.providers.Web3Provider(provider);
+          this.signer = this.provider.getSigner();
+          this.account = accounts[0];
+          
+          const network = await this.provider.getNetwork();
+          this.network = network.name;
+          this.chainId = network.chainId;
+
+          // Check if we're on the correct network
+          if (this.chainId !== this.config.chainId) {
+            await this.switchToCorrectNetwork();
+          }
+          
+          localStorage.setItem('somniaDex_wallet', JSON.stringify({
+            account: this.account,
+            walletName: this.walletName,
+            network: this.network,
+            chainId: this.chainId
+          }));
+          
+          this.updateUI();
+          this.hideWalletModal();
+          this.showStatus(`Connected to ${this.walletName} on ${this.config.name}`, 'success');
+          
+          console.log('Wallet connected:', this.account, 'Network:', this.network);
+          
+        } catch (error) {
+          console.error('Wallet connection failed:', error);
+          this.showStatus(`Connection failed: ${error.message}`, 'error');
+        }
+      }
+
+      async switchToCorrectNetwork() {
+        try {
+          await window.ethereum.request({
+            method: 'wallet_switchEthereumChain',
+            params: [{ chainId: `0x${this.config.chainId.toString(16)}` }],
+          });
+        } catch (switchError) {
+          if (switchError.code === 4902) {
+            try {
+              await window.ethereum.request({
+                method: 'wallet_addEthereumChain',
+                params: [{
+                  chainId: `0x${this.config.chainId.toString(16)}`,
+                  chainName: this.config.name,
+                  nativeCurrency: {
+                    name: this.config.symbol,
+                    symbol: this.config.symbol,
+                    decimals: 18,
+                  },
+                  rpcUrls: [this.config.rpcUrl],
+                  blockExplorerUrls: [this.config.blockExplorer],
+                }],
+              });
+            } catch (addError) {
+              throw new Error('Failed to add network to wallet');
+            }
+          } else {
+            throw switchError;
+          }
+        }
+      }
+      
+      disconnectWallet() {
+        localStorage.removeItem('somniaDex_wallet');
+        
+        this.provider = null;
+        this.signer = null;
+        this.account = null;
+        this.walletName = null;
+        this.network = null;
+        this.chainId = null;
+        
+        this.updateUI();
+        this.showStatus('Wallet disconnected', 'loading');
+        
+        console.log('Wallet disconnected');
+      }
+      
+      handleAccountChange(newAccount) {
+        this.account = newAccount;
+        
+        if (localStorage.getItem('somniaDex_wallet')) {
+          const walletData = JSON.parse(localStorage.getItem('somniaDex_wallet'));
+          walletData.account = newAccount;
+          localStorage.setItem('somniaDex_wallet', JSON.stringify(walletData));
+        }
+        
+        this.updateUI();
+        this.showStatus('Account changed', 'loading');
+      }
+      
+      handleChainChange(chainId) {
+        this.chainId = parseInt(chainId, 16);
+        this.updateNetworkName();
+        this.showStatus('Network changed', 'loading');
+        
+        if (localStorage.getItem('somniaDex_wallet')) {
+          const walletData = JSON.parse(localStorage.getItem('somniaDex_wallet'));
+          walletData.chainId = this.chainId;
+          localStorage.setItem('somniaDex_wallet', JSON.stringify(walletData));
+        }
+      }
+      
+      updateNetworkName() {
+        const networkNameEl = document.getElementById('networkName');
+        
+        if (this.chainId === this.config.chainId) {
+          networkNameEl.textContent = this.config.name;
+        } else if (this.chainId === 5031) {
+          networkNameEl.textContent = 'Somnia Mainnet';
+        } else if (this.chainId === 50312) {
+          networkNameEl.textContent = 'Somnia Testnet';
+        } else {
+          networkNameEl.textContent = `Chain ${this.chainId}`;
+        }
+      }
+      
+      updateUI() {
+        const connectBtn = document.getElementById('connectWallet');
+        const connectedDiv = document.getElementById('walletConnected');
+        const walletAddress = document.getElementById('walletAddress');
+        const walletAvatar = document.getElementById('walletAvatar');
+        const networkName = document.getElementById('networkName');
+        
+        if (this.account) {
+          connectBtn.style.display = 'none';
+          connectedDiv.style.display = 'flex';
+          walletAddress.textContent = `${this.account.substring(0, 6)}...${this.account.slice(-4)}`;
+          walletAvatar.textContent = this.account[2].toUpperCase();
+          
+          if (this.chainId) {
+            this.updateNetworkName();
+          } else {
+            networkName.textContent = 'Unknown';
+          }
+        } else {
+          connectBtn.style.display = 'block';
+          connectedDiv.style.display = 'none';
+          networkName.textContent = 'Not Connected';
+        }
+      }
+      
+      showStatus(message, type = 'loading') {
+        const existingStatus = document.querySelector('.global-status');
+        if (existingStatus) {
+          existingStatus.remove();
+        }
+        
+        const statusDiv = document.createElement('div');
+        statusDiv.className = `status ${type} global-status`;
+        statusDiv.textContent = message;
+        statusDiv.style.position = 'fixed';
+        statusDiv.style.top = '100px';
+        statusDiv.style.right = '20px';
+        statusDiv.style.zIndex = '1001';
+        statusDiv.style.minWidth = '300px';
+        
+        document.body.appendChild(statusDiv);
+        
+        setTimeout(() => {
+          if (statusDiv.parentNode) {
+            statusDiv.remove();
+          }
+        }, 3000);
+      }
+
+      // Utility methods for token operations
+      async getTokenBalance(tokenAddress, userAddress) {
+        try {
+          const contract = new ethers.Contract(tokenAddress, ERC20_ABI, this.provider);
+          const balance = await contract.balanceOf(userAddress);
+          const decimals = await contract.decimals();
+          return ethers.utils.formatUnits(balance, decimals);
+        } catch (error) {
+          console.error('Error getting token balance:', error);
+          return '0';
+        }
+      }
+
+      async approveToken(tokenAddress, spenderAddress, amount) {
+        try {
+          const contract = new ethers.Contract(tokenAddress, ERC20_ABI, this.signer);
+          const decimals = await contract.decimals();
+          const amountToApprove = ethers.utils.parseUnits(amount, decimals);
+          
+          const tx = await contract.approve(spenderAddress, amountToApprove);
+          await tx.wait();
+          
+          return tx;
+        } catch (error) {
+          console.error('Error approving token:', error);
+          throw error;
+        }
+      }
+
+      async transferToken(tokenAddress, toAddress, amount) {
+        try {
+          const contract = new ethers.Contract(tokenAddress, ERC20_ABI, this.signer);
+          const decimals = await contract.decimals();
+          const amountToTransfer = ethers.utils.parseUnits(amount, decimals);
+          
+          const tx = await contract.transfer(toAddress, amountToTransfer);
+          await tx.wait();
+          
+          return tx;
+        } catch (error) {
+          console.error('Error transferring token:', error);
+          throw error;
+        }
+      }
+    }
+
+    // =======================
+    // Initialize App
+    // =======================
+    let somniaDex;
+    
+    document.addEventListener('DOMContentLoaded', function() {
+      somniaDex = new SomniaDex();
+      window.somniaDex = somniaDex;
+    });
+    
+    // Global helper functions
+    function isWalletConnected() {
+      return somniaDex && somniaDex.account;
+    }
+    
+    function getWalletInfo() {
+      if (!somniaDex) return null;
+      return {
+        address: somniaDex.account,
+        walletName: somniaDex.walletName,
+        network: somniaDex.network,
+        chainId: somniaDex.chainId,
+        provider: somniaDex.provider,
+        signer: somniaDex.signer,
+        isConnected: !!somniaDex.account
+      };
+    }
+
+    // Window click handler for modal
+    window.onclick = function(event) {
+      const modal = document.getElementById('walletModal');
+      if (event.target == modal) {
+        modal.style.display = 'none';
+      }
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,1078 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SomniaDexfi - Advanced DeFi Trading</title>
+  <!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/5.7.2/ethers.umd.min.js"></script> -->
+  <!-- <script src="https://checkout.flutterwave.com/v3.js"></script> -->
+  <script src="assets/js/libs/ethers.umd.min.js"></script>
+  <script src="assets/js/libs/v3.js"></script>
+  <!-- <script src="assets/js/tabs.js"></script> -->
+  <!-- <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script> -->
+<script>
+function run_js_4_tab(page){
+    if(page==="wallet.html"){
+        console.log("here we go accessed");
+        // import("./wallet.js").then((module) => {
+        //     module.run_js_4_wallet();
+        // });
+        run_js_4_wallet();
+        console.log("ended here and we good.");
+    }
+}
+
+
+function run_js_4_wallet() {
+  const walletBtn = document.getElementById("walletBtn");
+  const walletInfo = document.getElementById("walletInfo");
+  const balancesSection = document.getElementById("balances");
+  const txSection = document.getElementById("transactions");
+  const loadingSection = document.getElementById("loading");
+  const walletWarning = document.getElementById("walletWarning");
+
+  // Known tokens list (add more as needed)
+  const TOKEN_LIST = [
+    { address: "0x0420b7272B146816851de0A3Df10F957ea282197", symbol: "MTX" }, // Example: your MyTokenX
+    // { address: "0xAnotherTokenAddress", symbol: "XYZ" }
+  ];
+
+  const ERC20_ABI = [
+    "function symbol() view returns (string)",
+    "function decimals() view returns (uint8)",
+    "function balanceOf(address) view returns (uint256)"
+  ];
+
+  function initWallet() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const walletAddress = urlParams.get("wallet_address");
+    const walletName = urlParams.get("wallet_name");
+    const network = urlParams.get("network");
+
+    let info = null;
+    if (walletAddress && walletName) {
+      info = { address: walletAddress, walletName, network, isConnected: true };
+    } else if (window.walletInfo && window.walletInfo.isConnected) {
+      info = window.walletInfo;
+    }
+
+    if (!info || !info.isConnected) {
+      walletInfo.style.display = "none";
+      balancesSection.style.display = "none";
+      txSection.style.display = "none";
+      walletWarning.style.display = "block";
+      walletBtn.textContent = "Connect Wallet";
+      return;
+    }
+
+    walletWarning.style.display = "none";
+
+    document.getElementById("connectedWalletName").textContent = info.walletName;
+    document.getElementById("connectedNetwork").textContent = info.network || "Unknown";
+    document.getElementById("connectedAddress").textContent =
+      `${info.address.substring(0, 8)}...${info.address.slice(-6)}`;
+    walletInfo.style.display = "block";
+    walletBtn.textContent = "Refresh Wallet Data";
+
+    loadWalletData(info.address, info.network);
+  }
+
+  document.addEventListener("walletInfoUpdated", (e) => {
+    window.walletInfo = e.detail;
+    initWallet();
+  });
+
+  walletBtn.addEventListener("click", function () {
+    if (walletBtn.textContent === "Connect Wallet") {
+      if (window.somniaDex) {
+        window.somniaDex.showWalletModal();
+      }
+    } else if (window.walletInfo && window.walletInfo.isConnected) {
+      loadWalletData(window.walletInfo.address, window.walletInfo.network);
+    }
+  });
+
+  async function loadWalletData(address, network) {
+    loadingSection.style.display = "block";
+    balancesSection.style.display = "none";
+    txSection.style.display = "none";
+
+    try {
+      // 1) Select RPC + native symbol
+      let rpcUrl, symbol;
+      if (network && network.toLowerCase().includes("main")) {
+        rpcUrl = "https://api.infra.mainnet.somnia.network/";
+        symbol = "SOMI";
+      } else {
+        rpcUrl = "https://dream-rpc.somnia.network/";
+        symbol = "STT";
+      }
+      const provider = new ethers.providers.JsonRpcProvider(rpcUrl);
+
+      // 2) Native balance
+      const balance = await provider.getBalance(address);
+      document.getElementById("nativeBalance").textContent =
+        `${ethers.utils.formatEther(balance)} ${symbol}`;
+
+      // 3) ERC20 balances
+      const balancesDiv = document.querySelector(".balances");
+      balancesDiv.innerHTML = `
+        <div class="balance-item">
+          <h4>${symbol}</h4>
+          <div class="balance-value" id="nativeBalance">${ethers.utils.formatEther(balance)} ${symbol}</div>
+        </div>
+      `;
+
+      for (let token of TOKEN_LIST) {
+        const contract = new ethers.Contract(token.address, ERC20_ABI, provider);
+        try {
+          const rawBalance = await contract.balanceOf(address);
+          const decimals = await contract.decimals();
+          const sym = await contract.symbol();
+          const formatted = ethers.utils.formatUnits(rawBalance, decimals);
+
+          const div = document.createElement("div");
+          div.className = "balance-item";
+          div.innerHTML = `<h4>${sym}</h4><div class="balance-value">${formatted} ${sym}</div>`;
+          balancesDiv.appendChild(div);
+        } catch (err) {
+          console.error("Error fetching token balance:", token.symbol, err);
+        }
+      }
+
+      // 4) Transactions (stub for now)
+      const txBody = document.getElementById("txBody");
+      txBody.innerHTML = `<tr><td colspan="4">Transaction history will appear here (integrate Somnia explorer API)</td></tr>`;
+
+      loadingSection.style.display = "none";
+      balancesSection.style.display = "block";
+      txSection.style.display = "block";
+    } catch (err) {
+      console.error("Error loading wallet data:", err);
+      loadingSection.style.display = "none";
+      balancesSection.style.display = "none";
+      txSection.style.display = "none";
+      walletWarning.style.display = "block";
+      walletWarning.textContent = "⚠️ Failed to load wallet data.";
+    }
+  }
+
+  initWallet();
+}
+</script> 
+
+  <style>
+    :root {
+      --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      --secondary-gradient: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+      --success-color: #10b981;
+      --error-color: #ef4444;
+      --warning-color: #f59e0b;
+      --glass-bg: rgba(255, 255, 255, 0.08);
+      --glass-border: rgba(255, 255, 255, 0.15);
+    }
+    
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: radial-gradient(ellipse at top, #1e1b4b 0%, #0f0f23 50%, #000000 100%);
+      color: #ffffff;
+      min-height: 100vh;
+      overflow-x: hidden;
+      position: relative;
+    }
+    
+    body::before {
+      content: '';
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: url('data:image/svg+xml,<svg width="60" height="60" viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg"><g fill="none" fill-rule="evenodd"><g fill="%23ffffff" fill-opacity="0.02"><circle cx="30" cy="30" r="1"/></g></svg>');
+      pointer-events: none;
+      z-index: -1;
+    }
+    
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 0 24px;
+    }
+    
+    /* Modal styles */
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 1000;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.8);
+      backdrop-filter: blur(10px);
+    }
+    
+    .modal-content {
+      background: var(--glass-bg);
+      border: 1px solid var(--glass-border);
+      backdrop-filter: blur(20px);
+      margin: 10% auto;
+      padding: 2rem;
+      border-radius: 20px;
+      width: 400px;
+      max-width: 90%;
+      animation: slideIn 0.3s ease;
+    }
+    
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateY(-50px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1.5rem;
+    }
+    
+    .modal-title {
+      font-size: 1.5rem;
+      font-weight: 700;
+      background: var(--primary-gradient);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    
+    .close {
+      background: none;
+      border: none;
+      color: #fff;
+      font-size: 1.5rem;
+      cursor: pointer;
+      padding: 0.5rem;
+      border-radius: 8px;
+      transition: background 0.3s ease;
+    }
+    
+    .close:hover {
+      background: rgba(255, 255, 255, 0.1);
+    }
+    
+    .wallet-option {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      padding: 1rem;
+      margin-bottom: 0.75rem;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--glass-border);
+      border-radius: 12px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+    
+    .wallet-option:hover {
+      background: rgba(255, 255, 255, 0.1);
+      border-color: rgba(102, 126, 234, 0.5);
+      transform: translateY(-2px);
+    }
+    
+    .wallet-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.2rem;
+      background: var(--primary-gradient);
+    }
+    
+    .wallet-info h3 {
+      font-weight: 600;
+      margin-bottom: 0.25rem;
+    }
+    
+    .wallet-info p {
+      font-size: 0.85rem;
+      color: #9ca3af;
+    }
+    
+    /* Navigation */
+    .navbar {
+      background: rgba(15, 15, 35, 0.9);
+      backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--glass-border);
+      padding: 1rem 0;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    }
+    
+    .nav-content {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    .logo {
+      font-size: 1.75rem;
+      font-weight: 700;
+      background: var(--primary-gradient);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    
+    .nav-tabs {
+      display: flex;
+      gap: 0.5rem;
+      list-style: none;
+      background: var(--glass-bg);
+      padding: 0.5rem;
+      border-radius: 12px;
+      border: 1px solid var(--glass-border);
+    }
+    
+    .nav-tab {
+      padding: 0.75rem 1.5rem;
+      cursor: pointer;
+      border-radius: 8px;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      font-weight: 500;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .nav-tab:hover {
+      background: rgba(102, 126, 234, 0.2);
+    }
+    
+    .nav-tab.active {
+      background: var(--primary-gradient);
+      color: white;
+      box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+    }
+    
+    .wallet-section {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+    
+    .network-indicator {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.5rem 1rem;
+      background: var(--glass-bg);
+      border: 1px solid var(--glass-border);
+      border-radius: 8px;
+      font-size: 0.9rem;
+    }
+    
+    .network-dot {
+      width: 8px;
+      height: 8px;
+      background: var(--success-color);
+      border-radius: 50%;
+      animation: pulse 2s infinite;
+    }
+    
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+    
+    .wallet-connect {
+      background: var(--primary-gradient);
+      border: none;
+      color: white;
+      padding: 0.75rem 1.5rem;
+      border-radius: 12px;
+      cursor: pointer;
+      font-weight: 600;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+    }
+    
+    .wallet-connect:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(102, 126, 234, 0.5);
+    }
+    
+    .wallet-connected {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.75rem 1rem;
+      background: var(--glass-bg);
+      border: 1px solid var(--glass-border);
+      border-radius: 12px;
+    }
+    
+    .wallet-avatar {
+      width: 24px;
+      height: 24px;
+      background: var(--primary-gradient);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.7rem;
+      font-weight: bold;
+    }
+    
+    /* Main Content */
+    .main-content {
+      padding: 2rem 0;
+      min-height: calc(100vh - 100px);
+    }
+    
+    /* Status message */
+    .status {
+      margin-top: 1rem;
+      padding: 0.75rem;
+      border-radius: 8px;
+      text-align: center;
+      font-weight: 500;
+    }
+    
+    .status.success {
+      background: rgba(16, 185, 129, 0.2);
+      border: 1px solid var(--success-color);
+      color: var(--success-color);
+    }
+    
+    .status.error {
+      background: rgba(239, 68, 68, 0.2);
+      border: 1px solid var(--error-color);
+      color: var(--error-color);
+    }
+    
+    .status.loading {
+      background: rgba(245, 158, 11, 0.2);
+      border: 1px solid var(--warning-color);
+      color: var(--warning-color);
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      .nav-content {
+        flex-direction: column;
+        gap: 1rem;
+      }
+      
+      .nav-tabs {
+        flex-wrap: wrap;
+      }
+      
+      .wallet-section {
+        justify-content: center;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Wallet Connection Modal -->
+  <div id="walletModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 class="modal-title">Connect Wallet</h2>
+        <button class="close" id="closeModal">&times;</button>
+      </div>
+      <div id="walletOptions">
+        <div class="wallet-option" data-wallet="metamask">
+          <div class="wallet-icon">🦊</div>
+          <div class="wallet-info">
+            <h3>MetaMask</h3>
+            <p>Popular wallet with browser extension</p>
+          </div>
+        </div>
+        <div class="wallet-option" data-wallet="walletconnect">
+          <div class="wallet-icon">🔗</div>
+          <div class="wallet-info">
+            <h3>WalletConnect</h3>
+            <p>Connect with mobile wallets</p>
+          </div>
+        </div>
+        <div class="wallet-option" data-wallet="coinbase">
+          <div class="wallet-icon">🔷</div>
+          <div class="wallet-info">
+            <h3>Coinbase Wallet</h3>
+            <p>Official Coinbase wallet</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Navigation -->
+  <nav class="navbar">
+    <div class="container">
+      <div class="nav-content">
+        <div class="logo">🌌 SomniaDexfi</div>
+        <ul class="nav-tabs">
+          <li class="nav-tab active" data-page="dex.html">DEX</li>
+          <li class="nav-tab" data-page="swap.html">Swap</li>
+          <li class="nav-tab" data-page="ramp.html">Ramp</li>
+          <li class="nav-tab" data-page="pairs.html">Liquidity</li>
+          <li class="nav-tab" data-page="wallet.html">Portfolio</li>
+        </ul>
+        <div class="wallet-section">
+          <div class="network-indicator" id="networkIndicator">
+            <div class="network-dot"></div>
+            <span id="networkName">Not Connected</span>
+          </div>
+          <button class="wallet-connect" id="connectWallet">Connect Wallet</button>
+          <div class="wallet-connected" id="walletConnected" style="display:none;">
+            <div class="wallet-avatar" id="walletAvatar">M</div>
+            <span id="walletAddress">0x1234...5678</span>
+            <button class="btn btn-secondary" id="disconnectBtn" style="padding:0.5rem;">×</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Tab container -->
+  <div class="container">
+    <div id="tabContainer" class="main-content"></div>
+  </div>
+
+  <!-- Status message container -->
+  <div id="statusContainer"></div>
+
+  <script>
+    // =======================
+    // SomniaDex Main Class
+    // =======================
+    class SomniaDex {
+      constructor() {
+        this.provider = null;
+        this.signer = null;
+        this.account = null;
+        this.walletName = null;
+        this.network = null;
+        this.chainId = null;
+        
+        // Network configurations
+        this.networkConfigs = {
+          mainnet: {
+            chainId: 1,
+            name: 'Ethereum',
+            symbol: 'ETH',
+            rpcUrl: 'https://mainnet.infura.io/v3/',
+            blockExplorer: 'https://etherscan.io'
+          },
+          devnet: {
+            chainId: 50312,
+            name: 'Somnia Testnet',
+            symbol: 'STT',
+            rpcUrl: 'https://dream-rpc.somnia.network/',
+            blockExplorer: 'https://shannon-explorer.somnia.network/'
+          }
+        };
+        
+        // ERC-20 Token addresses (Ethereum mainnet and Somnia Testnet)
+        this.tokenAddresses = {
+          mainnet: {
+            USDC: '0xA0b86a33E6441e1a720428c5EA6A9C62FA5E6Aa5',
+            USDT: '0xdAC17F958D2ee523a2206206994597C13D831ec7',
+            DAI: '0x6B175474E89094C44Da98b954EedeAC495271d0F'
+          },
+          devnet: {
+            // These would be the testnet token addresses
+            USDC: '0x...',
+            USDT: '0x...',
+            DAI: '0x...'
+          }
+        };
+        
+        // Supported wallets configuration
+        this.supportedWallets = {
+          metamask: {
+            name: 'MetaMask',
+            icon: '🦊',
+            description: 'Popular wallet with browser extension',
+            check: () => typeof window.ethereum !== 'undefined' && window.ethereum.isMetaMask
+          },
+          walletconnect: {
+            name: 'WalletConnect',
+            icon: '🔗',
+            description: 'Connect with mobile wallets',
+            check: () => false // Will implement later
+          },
+          coinbase: {
+            name: 'Coinbase Wallet',
+            icon: '🔷',
+            description: 'Official Coinbase wallet',
+            check: () => typeof window.ethereum !== 'undefined' && window.ethereum.isCoinbaseWallet
+          }
+        };
+        
+        this.init();
+      }
+      
+      init() {
+        this.bindEvents();
+        this.loadDefaultPage();
+        
+        // Check if we have a stored wallet connection
+        const storedWallet = localStorage.getItem('somniaDex_wallet');
+        if (storedWallet) {
+          try {
+            const walletData = JSON.parse(storedWallet);
+            if (walletData.account && walletData.walletName) {
+              // Try to reconnect to the wallet
+              this.reconnectWallet(walletData);
+            }
+          } catch (e) {
+            console.error('Error parsing stored wallet data:', e);
+            localStorage.removeItem('somniaDex_wallet');
+          }
+        }
+      }
+      
+      bindEvents() {
+        // Modal events
+        document.getElementById('connectWallet').addEventListener('click', () => this.showWalletModal());
+        document.getElementById('closeModal').addEventListener('click', () => this.hideWalletModal());
+        document.getElementById('disconnectBtn').addEventListener('click', () => this.disconnectWallet());
+        
+        // Wallet selection
+        document.querySelectorAll('.wallet-option').forEach(option => {
+          option.addEventListener('click', (e) => {
+            const walletType = e.currentTarget.getAttribute('data-wallet');
+            this.connectWallet(walletType);
+          });
+        });
+        
+        // Tab switching
+        document.querySelectorAll('.nav-tab').forEach(tab => {
+          tab.addEventListener('click', (e) => {
+            const page = e.target.getAttribute('data-page');
+            this.loadPage(page);
+            this.setActiveTab(e.target);
+          });
+        });
+        
+        // Listen for account changes
+        if (window.ethereum) {
+          window.ethereum.on('accountsChanged', (accounts) => {
+            if (accounts.length === 0) {
+              this.disconnectWallet();
+            } else if (accounts[0] !== this.account) {
+              this.handleAccountChange(accounts[0]);
+            }
+          });
+          
+          window.ethereum.on('chainChanged', (chainId) => {
+            this.handleChainChange(chainId);
+          });
+        }
+      }
+      
+      loadDefaultPage() {
+        this.loadPage('dex.html');
+      }
+      
+      loadPage(page) {
+        // Add wallet info as query parameters if connected
+        let pageUrl = page;
+        if (this.account && this.walletName && this.network) {
+          const params = new URLSearchParams({
+            wallet_address: this.account,
+            wallet_name: this.walletName,
+            network: this.network
+          });
+          pageUrl = `${page}?${params.toString()}`;
+        }
+        
+        fetch(pageUrl)
+          .then(response => response.text())
+          .then(html => {
+            document.getElementById('tabContainer').innerHTML = html;
+            // do the js
+            run_js_4_tab(page);
+            // Pass wallet info to loaded page
+            this.passWalletInfoToPage();
+
+          })
+          .catch(error => {
+            console.error('Error loading page:', error);
+            document.getElementById('tabContainer').innerHTML = `
+              <div style="text-align: center; padding: 2rem; color: #ef4444;">
+                Error loading ${page}. Please refresh the page.
+              </div>
+            `;
+          });
+      }
+      
+      
+      
+       /* // In class SomniaDex
+        loadPage(page) {
+        // You can keep your query-param building if you want, but it's not needed for injected HTML
+        const pageUrl = page;
+
+        fetch(pageUrl)
+            .then(r => r.text())
+            .then(html => {
+            const container = document.getElementById('tabContainer');
+            container.innerHTML = html;
+
+            // ✅ Make any <script> tags inside the injected HTML actually run
+            this._executeInlineScripts(container);
+
+            // ✅ Fire wallet info AFTER the tab's scripts have attached their listeners
+            setTimeout(() => this.passWalletInfoToPage(), 0);
+            })
+            .catch(error => {
+            console.error('Error loading page:', error);
+            document.getElementById('tabContainer').innerHTML = `
+                <div style="text-align: center; padding: 2rem; color: #ef4444;">
+                Error loading ${page}. Please refresh the page.
+                </div>
+            `;
+            });
+        }
+
+        // Still inside SomniaDex
+        _executeInlineScripts(container) {
+        const scripts = Array.from(container.querySelectorAll('script'));
+        for (const oldScript of scripts) {
+            const s = document.createElement('script');
+            // copy attributes (handles <script src="..."> too)
+            for (const attr of oldScript.attributes) s.setAttribute(attr.name, attr.value);
+            s.textContent = oldScript.textContent;
+            oldScript.parentNode.replaceChild(s, oldScript);
+        }
+        } */
+
+      
+    setActiveTab(activeTab) {
+        document.querySelectorAll('.nav-tab').forEach(tab => tab.classList.remove('active'));
+        activeTab.classList.add('active');
+      }
+      
+      showWalletModal() {
+        document.getElementById('walletModal').style.display = 'block';
+      }
+      
+      hideWalletModal() {
+        document.getElementById('walletModal').style.display = 'none';
+      }
+      
+      async reconnectWallet(walletData) {
+        try {
+          if (!window.ethereum) {
+            throw new Error('No Ethereum provider found');
+          }
+          
+          // Check if we're still connected to the same account
+          const accounts = await window.ethereum.request({ method: 'eth_accounts' });
+          
+          if (accounts.length > 0 && accounts[0].toLowerCase() === walletData.account.toLowerCase()) {
+            // We're still connected to the same account
+            this.provider = new ethers.providers.Web3Provider(window.ethereum);
+            this.signer = this.provider.getSigner();
+            this.account = accounts[0];
+            this.walletName = walletData.walletName;
+            
+            // Get network info
+            const network = await this.provider.getNetwork();
+            this.network = network.name;
+            this.chainId = network.chainId;
+            
+            this.updateUI();
+            this.showStatus(`Reconnected to ${this.walletName}`, 'success');
+            
+            // Pass wallet info to current page
+            this.passWalletInfoToPage();
+            
+            console.log('Wallet reconnected:', this.account, 'Network:', this.network);
+          } else {
+            // Account changed or disconnected, clear storage
+            localStorage.removeItem('somniaDex_wallet');
+            throw new Error('Wallet connection changed');
+          }
+        } catch (error) {
+          console.error('Wallet reconnection failed:', error);
+          localStorage.removeItem('somniaDex_wallet');
+        }
+      }
+      
+      async connectWallet(walletType) {
+        try {
+          let provider;
+          
+          switch(walletType) {
+            case 'metamask':
+              if (!this.supportedWallets.metamask.check()) {
+                throw new Error('MetaMask not found. Please install MetaMask.');
+              }
+              provider = window.ethereum;
+              this.walletName = 'MetaMask';
+              break;
+              
+            case 'walletconnect':
+              this.showStatus('WalletConnect integration coming soon!', 'loading');
+              return;
+              
+            case 'coinbase':
+              if (!this.supportedWallets.coinbase.check()) {
+                throw new Error('Coinbase Wallet not found.');
+              }
+              provider = window.ethereum;
+              this.walletName = 'Coinbase Wallet';
+              break;
+              
+            default:
+              throw new Error('Unsupported wallet type');
+          }
+          
+          // Request account access
+          const accounts = await provider.request({ method: 'eth_requestAccounts' });
+          
+          if (accounts.length === 0) {
+            throw new Error('No accounts found');
+          }
+          
+          this.provider = new ethers.providers.Web3Provider(provider);
+          this.signer = this.provider.getSigner();
+          this.account = accounts[0];
+          
+          // Get network info
+          const network = await this.provider.getNetwork();
+          this.network = network.name;
+          this.chainId = network.chainId;
+          
+          // Store wallet connection in localStorage
+          localStorage.setItem('somniaDex_wallet', JSON.stringify({
+            account: this.account,
+            walletName: this.walletName,
+            network: this.network,
+            chainId: this.chainId
+          }));
+          
+          this.updateUI();
+          this.hideWalletModal();
+          this.showStatus(`Connected to ${this.walletName}`, 'success');
+          
+          // Pass wallet info to current page
+          this.passWalletInfoToPage();
+          
+          // Reload the current page with wallet parameters
+          this.loadPage(document.querySelector('.nav-tab.active').getAttribute('data-page'));
+          
+          console.log('Wallet connected:', this.account, 'Network:', this.network);
+          
+        } catch (error) {
+          console.error('Wallet connection failed:', error);
+          this.showStatus(`Connection failed: ${error.message}`, 'error');
+        }
+      }
+      
+      disconnectWallet() {
+        // Clear stored wallet data
+        localStorage.removeItem('somniaDex_wallet');
+        
+        this.provider = null;
+        this.signer = null;
+        this.account = null;
+        this.walletName = null;
+        this.network = null;
+        this.chainId = null;
+        
+        this.updateUI();
+        this.showStatus('Wallet disconnected', 'loading');
+        
+        // Pass updated wallet info to current page
+        this.passWalletInfoToPage();
+        
+        // Reload the current page without wallet parameters
+        this.loadPage(document.querySelector('.nav-tab.active').getAttribute('data-page'));
+        
+        console.log('Wallet disconnected');
+      }
+      
+      handleAccountChange(newAccount) {
+        this.account = newAccount;
+        
+        // Update stored wallet data
+        if (localStorage.getItem('somniaDex_wallet')) {
+          const walletData = JSON.parse(localStorage.getItem('somniaDex_wallet'));
+          walletData.account = newAccount;
+          localStorage.setItem('somniaDex_wallet', JSON.stringify(walletData));
+        }
+        
+        this.updateUI();
+        this.passWalletInfoToPage();
+        this.showStatus('Account changed', 'loading');
+        
+        // Reload the current page with updated wallet parameters
+        this.loadPage(document.querySelector('.nav-tab.active').getAttribute('data-page'));
+      }
+      
+      handleChainChange(chainId) {
+        // Update the UI and reload to handle network change
+        this.chainId = parseInt(chainId, 16);
+        this.updateNetworkName();
+        this.showStatus('Network changed', 'loading');
+        
+        // Update stored wallet data
+        if (localStorage.getItem('somniaDex_wallet')) {
+          const walletData = JSON.parse(localStorage.getItem('somniaDex_wallet'));
+          walletData.chainId = this.chainId;
+          localStorage.setItem('somniaDex_wallet', JSON.stringify(walletData));
+        }
+        
+        // Reload the current page with updated network info
+        this.loadPage(document.querySelector('.nav-tab.active').getAttribute('data-page'));
+      }
+      
+      updateNetworkName() {
+        const networkNameEl = document.getElementById('networkName');
+        
+        // Check if we're on Somnia Testnet
+        if (this.chainId === 50312) {
+          networkNameEl.textContent = 'Somnia Testnet';
+          return;
+        }
+        
+        // Check other known networks
+        for (const network in this.networkConfigs) {
+          if (this.networkConfigs[network].chainId === this.chainId) {
+            networkNameEl.textContent = this.networkConfigs[network].name;
+            return;
+          }
+        }
+        
+        // Unknown network
+        networkNameEl.textContent = `Chain ${this.chainId}`;
+      }
+      
+      updateUI() {
+        const connectBtn = document.getElementById('connectWallet');
+        const connectedDiv = document.getElementById('walletConnected');
+        const walletAddress = document.getElementById('walletAddress');
+        const walletAvatar = document.getElementById('walletAvatar');
+        const networkName = document.getElementById('networkName');
+        
+        if (this.account) {
+          connectBtn.style.display = 'none';
+          connectedDiv.style.display = 'flex';
+          walletAddress.textContent = `${this.account.substring(0, 6)}...${this.account.slice(-4)}`;
+          walletAvatar.textContent = this.account[2].toUpperCase();
+          
+          // Update network name based on chainId
+          if (this.chainId) {
+            this.updateNetworkName();
+          } else {
+            networkName.textContent = 'Unknown';
+          }
+        } else {
+          connectBtn.style.display = 'block';
+          connectedDiv.style.display = 'none';
+          networkName.textContent = 'Not Connected';
+        }
+      }
+      
+      passWalletInfoToPage() {
+        // Create wallet info object to pass to pages
+        const walletInfo = {
+          address: this.account,
+          walletName: this.walletName,
+          network: this.network,
+          chainId: this.chainId,
+          provider: this.provider,
+          signer: this.signer,
+          isConnected: !!this.account
+        };
+        
+        // Dispatch custom event with wallet info
+        const event = new CustomEvent('walletInfoUpdated', { detail: walletInfo });
+        document.dispatchEvent(event);
+        
+        // Also store in window for direct access
+        window.walletInfo = walletInfo;
+      }
+      
+      showStatus(message, type = 'loading') {
+        // Remove existing status
+        const existingStatus = document.querySelector('.global-status');
+        if (existingStatus) {
+          existingStatus.remove();
+        }
+        
+        // Create new status
+        const statusDiv = document.createElement('div');
+        statusDiv.className = `status ${type} global-status`;
+        statusDiv.textContent = message;
+        statusDiv.style.position = 'fixed';
+        statusDiv.style.top = '100px';
+        statusDiv.style.right = '20px';
+        statusDiv.style.zIndex = '1001';
+        statusDiv.style.minWidth = '300px';
+        
+        document.body.appendChild(statusDiv);
+        
+        // Auto remove after 3 seconds
+        setTimeout(() => {
+          if (statusDiv.parentNode) {
+            statusDiv.remove();
+          }
+        }, 3000);
+      }
+      
+      // Helper method to get wallet info
+      getWalletInfo() {
+        return {
+          address: this.account,
+          walletName: this.walletName,
+          network: this.network,
+          chainId: this.chainId,
+          provider: this.provider,
+          signer: this.signer,
+          isConnected: !!this.account
+        };
+      }
+    }
+
+    // =======================
+    // Initialize App
+    // =======================
+    let somniaDex;
+    
+    document.addEventListener('DOMContentLoaded', function() {
+      somniaDex = new SomniaDex();
+      
+      // Make it globally available
+      window.somniaDex = somniaDex;
+    });
+    
+    // Global helper function for pages to check wallet connection
+    function isWalletConnected() {
+      return window.walletInfo && window.walletInfo.address;
+    }
+    
+    // Global helper function for pages to get wallet info
+    function getWalletInfo() {
+      return window.walletInfo || null;
+    }
+  </script>
+    <!-- <script src="assets/js/tabs.js"></script> -->
+
+</body>
+</html>

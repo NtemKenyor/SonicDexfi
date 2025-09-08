@@ -1,0 +1,8 @@
+{
+    "name": "My Somnia Token",
+    "symbol": "MST",
+    "decimals": 18,
+    "description": "A demo token deployed on Somnia Testnet",
+    "image": "https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/info/logo.png"
+}
+  

@@ -1,0 +1,295 @@
+<div class="tab-content active" id="wallet">
+    <style>
+      :root {
+        --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        --success-color: #10b981;
+        --error-color: #ef4444;
+        --warning-color: #f59e0b;
+        --glass-bg: rgba(255, 255, 255, 0.08);
+        --glass-border: rgba(255, 255, 255, 0.15);
+      }
+  
+      .wallet-container {
+        max-width: 700px;
+        margin: 2rem auto;
+      }
+  
+      .wallet-card {
+        background: var(--glass-bg);
+        border: 1px solid var(--glass-border);
+        border-radius: 20px;
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+        backdrop-filter: blur(20px);
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+      }
+  
+      .wallet-title {
+        font-size: 1.6rem;
+        font-weight: 700;
+        margin-bottom: 1.2rem;
+        text-align: center;
+        background: var(--primary-gradient);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+      }
+  
+      .btn-wallet {
+        display: block;
+        margin: 0 auto 1rem;
+        background: var(--primary-gradient);
+        color: white;
+        border: none;
+        padding: 0.8rem 1.5rem;
+        border-radius: 12px;
+        cursor: pointer;
+        font-weight: 600;
+        transition: all 0.3s ease;
+      }
+  
+      .btn-wallet:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+      }
+  
+      .balances {
+        display: flex;
+        justify-content: space-around;
+        margin-top: 1rem;
+      }
+  
+      .balance-item {
+        text-align: center;
+        background: rgba(255, 255, 255, 0.05);
+        padding: 1rem;
+        border-radius: 12px;
+        flex: 1;
+        margin: 0 0.5rem;
+      }
+  
+      .balance-item h4 {
+        margin-bottom: 0.3rem;
+        font-size: 1.1rem;
+      }
+  
+      .balance-value {
+        font-size: 1.2rem;
+        font-weight: bold;
+      }
+  
+      .tx-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 1rem;
+      }
+  
+      .tx-table th,
+      .tx-table td {
+        padding: 0.75rem;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        text-align: center;
+      }
+  
+      .tx-table th {
+        background: rgba(255, 255, 255, 0.05);
+      }
+  
+      .tx-type.buy {
+        color: var(--success-color);
+        font-weight: 600;
+      }
+  
+      .tx-type.sell {
+        color: var(--error-color);
+        font-weight: 600;
+      }
+  
+      .tx-type.swap {
+        color: var(--warning-color);
+        font-weight: 600;
+      }
+  
+      .loading {
+        text-align: center;
+        padding: 2rem;
+        color: #9ca3af;
+      }
+  
+      .wallet-warning {
+        text-align: center;
+        padding: 1.5rem;
+        color: #ef4444;
+        font-weight: 600;
+      }
+    </style>
+  
+    <div class="wallet-container">
+      <div class="wallet-card">
+        <h3 class="wallet-title">👛 My Wallet</h3>
+  
+        <div id="walletInfo" style="text-align: center; margin-bottom: 1rem; display: none;">
+          <p>Connected with: <span id="connectedWalletName"></span></p>
+          <p>Network: <span id="connectedNetwork"></span></p>
+          <p>Address: <span id="connectedAddress"></span></p>
+        </div>
+  
+        <div id="walletWarning" class="wallet-warning" style="display:none;">
+          Wallet Not Connected.<br>
+          Please connect your wallet using the button in the navigation bar to view your portfolio.
+        </div>
+  
+        <button id="walletBtn" class="btn-wallet">Connect Wallet</button>
+  
+        <div id="balances" style="display: none;">
+          <h4 style="text-align:center; margin:1rem 0;">Balances</h4>
+          <div class="balances">
+            <div class="balance-item">
+              <h4>ETH/STT</h4>
+              <div class="balance-value" id="nativeBalance">0</div>
+            </div>
+          </div>
+        </div>
+  
+        <div id="loading" class="loading" style="display: none;">
+          Loading wallet data...
+        </div>
+  
+        <div id="transactions" style="display: none;">
+          <h4 style="text-align:center; margin:1rem 0;">Transaction History</h4>
+          <table class="tx-table">
+            <thead>
+              <tr>
+                <th>Type</th>
+                <th>Token</th>
+                <th>Amount</th>
+                <th>Date</th>
+              </tr>
+            </thead>
+            <tbody id="txBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  
+    
+  </div>
+
+  <!-- Add ethers.js to your page -->
+<script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
+
+<script>
+function run_js_4_wallet() {
+  const walletBtn = document.getElementById("walletBtn");
+  const walletInfo = document.getElementById("walletInfo");
+  const balancesSection = document.getElementById("balances");
+  const txSection = document.getElementById("transactions");
+  const loadingSection = document.getElementById("loading");
+  const walletWarning = document.getElementById("walletWarning");
+
+  function initWallet() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const walletAddress = urlParams.get("wallet_address");
+    const walletName = urlParams.get("wallet_name");
+    const network = urlParams.get("network");
+
+    let info = null;
+    if (walletAddress && walletName) {
+      info = { address: walletAddress, walletName, network, isConnected: true };
+    } else if (window.walletInfo && window.walletInfo.isConnected) {
+      info = window.walletInfo;
+    }
+
+    if (!info || !info.isConnected) {
+      walletInfo.style.display = "none";
+      balancesSection.style.display = "none";
+      txSection.style.display = "none";
+      walletWarning.style.display = "block";
+      walletBtn.textContent = "Connect Wallet";
+      return;
+    }
+
+    walletWarning.style.display = "none";
+
+    document.getElementById("connectedWalletName").textContent = info.walletName;
+    document.getElementById("connectedNetwork").textContent = info.network || "Unknown";
+    document.getElementById("connectedAddress").textContent =
+      `${info.address.substring(0, 8)}...${info.address.slice(-6)}`;
+    walletInfo.style.display = "block";
+    walletBtn.textContent = "Refresh Wallet Data";
+
+    loadWalletData(info.address, info.network);
+  }
+
+  document.addEventListener("walletInfoUpdated", (e) => {
+    window.walletInfo = e.detail;
+    initWallet();
+  });
+
+  walletBtn.addEventListener("click", function () {
+    if (walletBtn.textContent === "Connect Wallet") {
+      if (window.somniaDex) {
+        window.somniaDex.showWalletModal();
+      }
+    } else if (window.walletInfo && window.walletInfo.isConnected) {
+      loadWalletData(window.walletInfo.address, window.walletInfo.network);
+    }
+  });
+
+  async function loadWalletData(address, network) {
+    loadingSection.style.display = "block";
+    balancesSection.style.display = "none";
+    txSection.style.display = "none";
+
+    try {
+      // 1) Choose RPC based on network
+      let rpcUrl, symbol;
+      if (network && network.toLowerCase().includes("main")) {
+        rpcUrl = "https://api.infra.mainnet.somnia.network/";
+        symbol = "SOMI";
+      } else {
+        rpcUrl = "https://dream-rpc.somnia.network/";
+        symbol = "STT";
+      }
+
+      const provider = new ethers.providers.JsonRpcProvider(rpcUrl);
+
+      // 2) Get native balance
+      const balance = await provider.getBalance(address);
+      document.getElementById("nativeBalance").textContent =
+        `${ethers.utils.formatEther(balance)} ${symbol}`;
+
+      // (Optional) 3) Check ERC20 balances if you have contract addresses
+      // const ERC20_ABI = [
+      //   "function symbol() view returns (string)",
+      //   "function decimals() view returns (uint8)",
+      //   "function balanceOf(address) view returns (uint256)"
+      // ];
+      // const token = new ethers.Contract("0xTokenAddress", ERC20_ABI, provider);
+      // const rawBalance = await token.balanceOf(address);
+      // const decimals = await token.decimals();
+      // const sym = await token.symbol();
+      // console.log(`${sym}:`, ethers.utils.formatUnits(rawBalance, decimals));
+
+      // 4) For now: mock transactions until explorer API is integrated
+      const txBody = document.getElementById("txBody");
+      txBody.innerHTML = "";
+      txBody.innerHTML = `<tr><td colspan="4">Transactions will appear here (connect explorer API)</td></tr>`;
+
+      loadingSection.style.display = "none";
+      balancesSection.style.display = "block";
+      txSection.style.display = "block";
+    } catch (err) {
+      console.error("Error loading wallet data:", err);
+      loadingSection.style.display = "none";
+      balancesSection.style.display = "none";
+      txSection.style.display = "none";
+      walletWarning.style.display = "block";
+      walletWarning.textContent = "⚠️ Failed to load wallet data.";
+    }
+  }
+
+  initWallet();
+}
+</script>
+
+  

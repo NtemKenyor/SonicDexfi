@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Sonic Token Builder</title>
+  <style>
+    body { font-family: Arial, sans-serif; background: #121212; color: white; text-align: center; padding: 20px; }
+    .container { max-width: 600px; margin: auto; }
+    .card { background: #1e1e1e; padding: 15px; margin: 20px 0; border-radius: 10px; }
+    input, select { width: 90%; margin: 5px 0; padding: 10px; border-radius: 6px; border: none; }
+    button { background: #6c63ff; color: white; border: none; padding: 10px 15px; border-radius: 6px; cursor: pointer; }
+    button:hover { background: #5148cc; }
+    p { margin-top: 10px; font-size: 14px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🚀 Sonic Token Builder</h1>
+
+    <button id="connectBtn">🔗 Connect Wallet</button>
+    <p id="walletInfo"></p>
+
+    <div class="card">
+      <h2>Create Token</h2>
+      <input id="tokenName" placeholder="Token Name">
+      <input id="tokenSymbol" placeholder="Symbol">
+      <button onclick="createToken()">Deploy Token</button>
+      <p id="createStatus"></p>
+    </div>
+
+    <div class="card">
+      <h2>My Tokens</h2>
+      <select id="tokenList" onchange="selectToken()"></select>
+      <p id="activeToken"></p>
+    </div>
+
+    <div class="card">
+      <h2>Mint Tokens</h2>
+      <input id="mintTo" placeholder="Recipient Address">
+      <input id="mintAmount" placeholder="Amount">
+      <button onclick="mintTokens()">Mint</button>
+      <p id="mintStatus"></p>
+    </div>
+
+    <div class="card">
+      <h2>Grant Authority</h2>
+      <input id="grantAddress" placeholder="Address to Grant Role">
+      <input id="grantRole" placeholder="Role (e.g. MINTER_ROLE)">
+      <button onclick="grantAuthority()">Grant Role</button>
+      <p id="grantStatus"></p>
+    </div>
+
+    <div class="card">
+      <h2>Transfer Tokens</h2>
+      <input id="transferTo" placeholder="Recipient Address">
+      <input id="transferAmount" placeholder="Amount">
+      <button onclick="transferTokens()">Transfer</button>
+      <p id="transferStatus"></p>
+    </div>
+
+    <div class="card">
+      <h2>Set Metadata</h2>
+      <input id="metadataUri" placeholder="ipfs://... or https://...">
+      <button onclick="setMetadata()">Save Metadata</button>
+      <p id="metadataStatus"></p>
+    </div>
+
+    <div class="card">
+      <h2>Remove Recovery Admin</h2>
+      <input id="newAdmin" placeholder="Address of new Admin (must already have role)">
+      <button onclick="removeRecoveryAdmin()">Remove Recovery Admin</button>
+      <p id="removeAdminStatus"></p>
+    </div>
+  </div>
+
+  <script>
+    const API_BASE = "http://localhost:4000/api/token"; // local API
+    const REMOTE_API_BASE = "https://roynek.com/api/token"; // remote API if deployed
+
+    let provider, signer, walletAddress;
+    let currentTokenAddress = null;
+
+    // -------- WALLET HANDLING --------
+    async function initWallet() {
+      const urlParams = new URLSearchParams(window.location.search);
+      walletAddress = urlParams.get("wallet_address");
+
+      if (walletAddress) {
+        document.getElementById("walletInfo").innerText = `Connected (from URL): ${walletAddress}`;
+        return;
+      }
+
+      if (!window.ethereum) {
+        alert("Please install MetaMask!");
+        return;
+      }
+
+      try {
+        provider = new ethers.providers.Web3Provider(window.ethereum);
+        await provider.send("eth_requestAccounts", []);
+        signer = provider.getSigner();
+        walletAddress = await signer.getAddress();
+
+        document.getElementById("walletInfo").innerText = `Connected: ${walletAddress}`;
+      } catch (err) {
+        alert("Wallet connection failed: " + err.message);
+      }
+    }
+    document.getElementById("connectBtn").onclick = initWallet;
+
+    // -------- TOKEN STORAGE --------
+    function saveToken(tokenAddress, name, symbol) {
+      const tokens = JSON.parse(localStorage.getItem("myTokens") || "[]");
+      tokens.push({
+        address: tokenAddress,
+        name,
+        symbol,
+        createdAt: new Date().toISOString()
+      });
+      localStorage.setItem("myTokens", JSON.stringify(tokens));
+      loadTokens();
+    }
+
+    function loadTokens() {
+      const tokens = JSON.parse(localStorage.getItem("myTokens") || "[]");
+      const tokenList = document.getElementById("tokenList");
+      tokenList.innerHTML = "";
+      tokens.forEach((t) => {
+        const opt = document.createElement("option");
+        opt.value = t.address;
+        opt.textContent = `${t.name} (${t.symbol}) - ${t.address.slice(0,6)}...`;
+        tokenList.appendChild(opt);
+      });
+      if (tokens.length > 0 && !currentTokenAddress) {
+        currentTokenAddress = tokens[0].address;
+        document.getElementById("activeToken").innerText = `Active Token: ${tokens[0].name} (${tokens[0].symbol})`;
+      }
+    }
+
+    function selectToken() {
+      const tokenList = document.getElementById("tokenList");
+      currentTokenAddress = tokenList.value;
+      const tokens = JSON.parse(localStorage.getItem("myTokens") || "[]");
+      const selected = tokens.find(t => t.address === currentTokenAddress);
+      document.getElementById("activeToken").innerText = `Active Token: ${selected.name} (${selected.symbol})`;
+    }
+
+    // -------- API ACTIONS --------
+    async function createToken() {
+      const name = document.getElementById("tokenName").value;
+      const symbol = document.getElementById("tokenSymbol").value;
+
+      try {
+        const resp = await fetch(`${API_BASE}/create`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ name, symbol, userAddress: walletAddress })
+        });
+
+        const data = await resp.json();
+        if (data.success) {
+          currentTokenAddress = data.tokenAddress;
+          saveToken(data.tokenAddress, name, symbol);
+          document.getElementById("createStatus").innerText = `✅ Token deployed at ${data.tokenAddress}`;
+        } else {
+          document.getElementById("createStatus").innerText = `❌ ${data.error}`;
+        }
+      } catch (err) {
+        document.getElementById("createStatus").innerText = `❌ ${err.message}`;
+      }
+    }
+
+    async function mintTokens() {
+      try {
+        if (!currentTokenAddress) throw new Error("No token selected.");
+        const to = document.getElementById("mintTo").value;
+        const amount = document.getElementById("mintAmount").value;
+
+        const resp = await fetch(`${API_BASE}/mint`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ tokenAddress: currentTokenAddress, to, amount })
+        });
+
+        const data = await resp.json();
+        if (data.success) {
+          document.getElementById("mintStatus").innerText = `✅ Minted ${amount} (tx: ${data.txHash})`;
+        } else {
+          document.getElementById("mintStatus").innerText = `❌ ${data.error}`;
+        }
+      } catch (err) {
+        document.getElementById("mintStatus").innerText = `❌ ${err.message}`;
+      }
+    }
+
+    async function grantAuthority() {
+      try {
+        if (!currentTokenAddress) throw new Error("No token selected.");
+        const addr = document.getElementById("grantAddress").value;
+        const role = document.getElementById("grantRole").value || "MINTER_ROLE";
+
+        const resp = await fetch(`${API_BASE}/grant-role`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ tokenAddress: currentTokenAddress, role, address: addr })
+        });
+
+        const data = await resp.json();
+        if (data.success) {
+          document.getElementById("grantStatus").innerText = `✅ Granted ${role} (tx: ${data.txHash})`;
+        } else {
+          document.getElementById("grantStatus").innerText = `❌ ${data.error}`;
+        }
+      } catch (err) {
+        document.getElementById("grantStatus").innerText = `❌ ${err.message}`;
+      }
+    }
+
+    async function transferTokens() {
+      try {
+        if (!currentTokenAddress) throw new Error("No token selected.");
+        const to = document.getElementById("transferTo").value;
+        const amount = document.getElementById("transferAmount").value;
+
+        const resp = await fetch(`${API_BASE}/transfer`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ tokenAddress: currentTokenAddress, to, amount })
+        });
+
+        const data = await resp.json();
+        if (data.success) {
+          document.getElementById("transferStatus").innerText = `✅ Transferred ${amount} (tx: ${data.txHash})`;
+        } else {
+          document.getElementById("transferStatus").innerText = `❌ ${data.error}`;
+        }
+      } catch (err) {
+        document.getElementById("transferStatus").innerText = `❌ ${err.message}`;
+      }
+    }
+
+    async function setMetadata() {
+      try {
+        if (!currentTokenAddress) throw new Error("No token selected.");
+        const metadataUri = document.getElementById("metadataUri").value;
+
+        const resp = await fetch(`${API_BASE}/set-metadata`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ tokenAddress: currentTokenAddress, metadataUri })
+        });
+
+        const data = await resp.json();
+        if (data.success) {
+          document.getElementById("metadataStatus").innerText = `✅ Metadata set (tx: ${data.txHash})`;
+        } else {
+          document.getElementById("metadataStatus").innerText = `❌ ${data.error}`;
+        }
+      } catch (err) {
+        document.getElementById("metadataStatus").innerText = `❌ ${err.message}`;
+      }
+    }
+
+    async function removeRecoveryAdmin() {
+      try {
+        if (!currentTokenAddress) throw new Error("No token selected.");
+        const newAdmin = document.getElementById("newAdmin").value;
+
+        const resp = await fetch(`${API_BASE}/remove-admin`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ tokenAddress: currentTokenAddress, newAdmin })
+        });
+
+        const data = await resp.json();
+        if (data.success) {
+          document.getElementById("removeAdminStatus").innerText = `✅ Recovery Admin removed (tx: ${data.txHash})`;
+        } else {
+          document.getElementById("removeAdminStatus").innerText = `❌ ${data.error}`;
+        }
+      } catch (err) {
+        document.getElementById("removeAdminStatus").innerText = `❌ ${err.message}`;
+      }
+    }
+
+    // Init
+    window.onload = () => {
+      loadTokens();
+    };
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
+</body>
+</html>

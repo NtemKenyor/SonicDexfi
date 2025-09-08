@@ -1,0 +1,173 @@
+<div class="tab-content active" id="dex">
+    <div class="trading-header">
+      <div>
+        <h1>Trade on SomniaDexfi</h1>
+        <p>Discover and trade verified and community token pairs</p>
+      </div>
+      <div class="market-stats">
+        <div class="stat-item">
+          <div class="stat-value" id="totalVolume">$2.4M</div>
+          <div class="stat-label">24h Volume</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-value" id="totalPairs">12</div>
+          <div class="stat-label">Active Pairs</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-value" id="totalLiquidity">$8.7M</div>
+          <div class="stat-label">Total Liquidity</div>
+        </div>
+      </div>
+    </div>
+  
+    <div class="card">
+      <h3 class="card-title">📊 Market Pairs</h3>
+      <div class="pair-list" id="marketPairs">
+        <div class="pair-header">
+          <span>Pair</span>
+          <span>Status</span>
+          <span>Price</span>
+          <span>24h Change</span>
+          <span>24h Volume</span>
+          <span>Action</span>
+        </div>
+  
+        <!-- Example Row -->
+        <div class="pair-row">
+          <span><strong>ETH / USDC</strong></span>
+          <span><span class="badge verified">Verified</span></span>
+          <span>$3,200</span>
+          <span class="positive">+2.5%</span>
+          <span>$1.2M</span>
+          <span><button class="btn btn-trade">Trade</button></span>
+        </div>
+  
+        <div class="pair-row">
+          <span><strong>SHIB / ETH</strong></span>
+          <span><span class="badge community">Community</span></span>
+          <span>$0.000021</span>
+          <span class="negative">-5.3%</span>
+          <span>$150K</span>
+          <span><button class="btn btn-trade">Trade</button></span>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+
+
+  <style>
+    /* Trading header */
+.trading-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 2rem;
+}
+
+.trading-header h1 {
+  font-size: 2rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+}
+
+.market-stats {
+  display: flex;
+  gap: 2rem;
+}
+
+.stat-item {
+  text-align: right;
+}
+
+.stat-value {
+  font-size: 1.25rem;
+  font-weight: bold;
+}
+
+.stat-label {
+  font-size: 0.85rem;
+  color: #9ca3af;
+}
+
+/* Pair list */
+.pair-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.pair-header, .pair-row {
+  display: grid;
+  grid-template-columns: 1.5fr 1fr 1fr 1fr 1fr 1fr;
+  align-items: center;
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+}
+
+.pair-header {
+  font-weight: bold;
+  color: #9ca3af;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+}
+
+.pair-row {
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 8px;
+  transition: background 0.3s ease;
+}
+
+.pair-row:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+/* Badges */
+.badge {
+  padding: 0.25rem 0.6rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  display: inline-block;
+}
+
+.badge.verified {
+  background: rgba(16, 185, 129, 0.2);
+  color: var(--success-color);
+  border: 1px solid var(--success-color);
+}
+
+.badge.community {
+  background: rgba(245, 158, 11, 0.2);
+  color: var(--warning-color);
+  border: 1px solid var(--warning-color);
+}
+
+/* Positive / Negative change */
+.positive {
+  color: var(--success-color);
+  font-weight: 600;
+}
+
+.negative {
+  color: var(--error-color);
+  font-weight: 600;
+}
+
+/* Trade button */
+.btn-trade {
+  background: var(--primary-gradient);
+  color: #fff;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.3s ease;
+}
+
+.btn-trade:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+}
+
+  </style>

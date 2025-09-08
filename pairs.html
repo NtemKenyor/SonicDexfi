@@ -1,0 +1,186 @@
+<div class="tab-content active" id="pairs">
+    <style>
+      :root {
+        --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        --success-color: #10b981;
+        --error-color: #ef4444;
+        --warning-color: #f59e0b;
+        --glass-bg: rgba(255, 255, 255, 0.08);
+        --glass-border: rgba(255, 255, 255, 0.15);
+      }
+  
+      /* Card */
+      .card {
+        background: var(--glass-bg);
+        border: 1px solid var(--glass-border);
+        border-radius: 20px;
+        padding: 2rem;
+        margin-bottom: 2rem;
+        backdrop-filter: blur(20px);
+        position: relative;
+        overflow: hidden;
+        transition: all 0.3s ease;
+      }
+  
+      .card-title {
+        font-size: 1.5rem;
+        font-weight: 700;
+        margin-bottom: 1.5rem;
+        background: var(--primary-gradient);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+  
+      /* Form */
+      .form-group {
+        margin-bottom: 1.25rem;
+      }
+  
+      .form-group label {
+        display: block;
+        margin-bottom: 0.5rem;
+        font-weight: 500;
+      }
+  
+      .form-group input,
+      .form-group select {
+        width: 100%;
+        padding: 0.75rem;
+        border-radius: 12px;
+        border: 1px solid var(--glass-border);
+        background: rgba(255, 255, 255, 0.05);
+        color: white;
+        font-size: 1rem;
+      }
+  
+      /* Button */
+      .btn {
+        background: var(--primary-gradient);
+        color: white;
+        border: none;
+        padding: 0.75rem 1.5rem;
+        border-radius: 12px;
+        cursor: pointer;
+        font-weight: 600;
+        transition: all 0.3s ease;
+      }
+  
+      .btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+      }
+  
+      /* Status message */
+      .status {
+        margin-top: 1rem;
+        font-size: 0.95rem;
+        font-weight: 500;
+      }
+  
+      .status.success {
+        color: var(--success-color);
+      }
+  
+      .status.error {
+        color: var(--error-color);
+      }
+    </style>
+  
+    <div class="card">
+      <h3 class="card-title">🌀 Create New Pair</h3>
+      <form id="createPairForm">
+        <div class="form-group">
+          <label for="tokenA">Token A</label>
+          <input type="text" id="tokenA" placeholder="e.g., ETH" required>
+        </div>
+        <div class="form-group">
+          <label for="tokenB">Token B</label>
+          <input type="text" id="tokenB" placeholder="e.g., USDC" required>
+        </div>
+        <button type="submit" class="btn">Create Pair</button>
+      </form>
+      <div id="pairStatus" class="status"></div>
+    </div>
+  
+    <div class="card">
+      <h3 class="card-title">💧 Add Liquidity</h3>
+      <form id="addLiquidityForm">
+        <div class="form-group">
+          <label for="liquidityPair">Select Pair</label>
+          <select id="liquidityPair">
+            <option value="ETH/USDC">ETH / USDC</option>
+            <option value="ETH/USDT">ETH / USDT</option>
+            <option value="BTC/USDC">BTC / USDC</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="amountA">Amount Token A</label>
+          <input type="number" id="amountA" placeholder="Enter amount" required>
+        </div>
+        <div class="form-group">
+          <label for="amountB">Amount Token B</label>
+          <input type="number" id="amountB" placeholder="Enter amount" required>
+        </div>
+        <button type="submit" class="btn">Add Liquidity</button>
+      </form>
+      <div id="liquidityStatus" class="status"></div>
+    </div>
+  
+    <script>
+      // Embedded JS for pairs.html
+      document.addEventListener("DOMContentLoaded", function () {
+        const createPairForm = document.getElementById("createPairForm");
+        const addLiquidityForm = document.getElementById("addLiquidityForm");
+        const pairStatus = document.getElementById("pairStatus");
+        const liquidityStatus = document.getElementById("liquidityStatus");
+  
+        // Handle Create Pair
+        createPairForm.addEventListener("submit", function (e) {
+          e.preventDefault();
+          const tokenA = document.getElementById("tokenA").value.trim();
+          const tokenB = document.getElementById("tokenB").value.trim();
+  
+          if (!tokenA || !tokenB) {
+            pairStatus.textContent = "❌ Please enter both tokens.";
+            pairStatus.className = "status error";
+            return;
+          }
+  
+          setTimeout(() => {
+            pairStatus.textContent = `✅ Pair created successfully: ${tokenA}/${tokenB}`;
+            pairStatus.className = "status success";
+  
+            // Add to liquidity pair dropdown dynamically
+            const select = document.getElementById("liquidityPair");
+            const option = document.createElement("option");
+            option.value = `${tokenA}/${tokenB}`;
+            option.textContent = `${tokenA} / ${tokenB}`;
+            select.appendChild(option);
+          }, 800);
+        });
+  
+        // Handle Add Liquidity
+        addLiquidityForm.addEventListener("submit", function (e) {
+          e.preventDefault();
+          const pair = document.getElementById("liquidityPair").value;
+          const amountA = document.getElementById("amountA").value;
+          const amountB = document.getElementById("amountB").value;
+  
+          if (!amountA || !amountB || amountA <= 0 || amountB <= 0) {
+            liquidityStatus.textContent = "❌ Enter valid amounts for both tokens.";
+            liquidityStatus.className = "status error";
+            return;
+          }
+  
+          setTimeout(() => {
+            liquidityStatus.textContent = `✅ Added ${amountA} + ${amountB} liquidity to pool ${pair}`;
+            liquidityStatus.className = "status success";
+          }, 800);
+        });
+      });
+    </script>
+  </div>
+  

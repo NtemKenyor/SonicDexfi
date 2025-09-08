@@ -1,0 +1,2219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sonic DeFi AMM Exchange</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/5.7.2/ethers.umd.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary-gradient: linear-gradient(135deg, #6366f1, #8b5cf6);
+            --secondary-gradient: linear-gradient(135deg, #667eea, #764ba2);
+            --success-color: #10b981;
+            --error-color: #ef4444;
+            --warning-color: #f59e0b;
+            --info-color: #3b82f6;
+            --bg-primary: #0f0f23;
+            --bg-secondary: #1a1a3a;
+            --text-primary: #ffffff;
+            --text-secondary: #a1a1aa;
+            --border-color: #374151;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg-primary);
+            min-height: 100vh;
+            color: var(--text-primary);
+            position: relative;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: radial-gradient(circle at 20% 80%, #6366f1 0%, transparent 50%),
+                        radial-gradient(circle at 80% 20%, #8b5cf6 0%, transparent 50%),
+                        radial-gradient(circle at 40% 40%, #667eea 0%, transparent 50%);
+            opacity: 0.1;
+            z-index: -1;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .header h1 {
+            font-size: 3rem;
+            background: var(--primary-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 10px;
+            font-weight: 800;
+        }
+
+        .header p {
+            color: var(--text-secondary);
+            font-size: 1.1rem;
+        }
+
+        .network-status {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 20px;
+            padding: 10px;
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--success-color);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.1); opacity: 0.7; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        .wallet-section {
+            background: var(--bg-secondary);
+            padding: 20px;
+            border-radius: 16px;
+            margin-bottom: 30px;
+            border: 1px solid var(--border-color);
+            backdrop-filter: blur(20px);
+        }
+
+        .wallet-connected {
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: 20px;
+            align-items: center;
+        }
+
+        .wallet-info {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .wallet-address {
+            font-family: 'Courier New', monospace;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        .disconnect-btn {
+            background: var(--error-color);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .disconnect-btn:hover {
+            background: #dc2626;
+            transform: translateY(-1px);
+        }
+
+        .tabs {
+            display: flex;
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            margin-bottom: 20px;
+            overflow: hidden;
+            border: 1px solid var(--border-color);
+        }
+
+        .tab {
+            flex: 1;
+            padding: 15px 20px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            color: var(--text-secondary);
+            position: relative;
+        }
+
+        .tab.active {
+            background: var(--primary-gradient);
+            color: white;
+        }
+
+        .tab-content {
+            display: none;
+            background: var(--bg-secondary);
+            padding: 30px;
+            border-radius: 16px;
+            border: 1px solid var(--border-color);
+            backdrop-filter: blur(20px);
+        }
+
+        .tab-content.active {
+            display: block;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .input-group {
+            position: relative;
+            display: flex;
+            align-items: center;
+            background: var(--bg-primary);
+            border: 2px solid var(--border-color);
+            border-radius: 12px;
+            padding: 15px;
+            transition: all 0.3s ease;
+        }
+
+        .input-group:focus-within {
+            border-color: #6366f1;
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+        }
+
+        .input-group input {
+            flex: 1;
+            border: none;
+            outline: none;
+            font-size: 16px;
+            background: transparent;
+            color: var(--text-primary);
+        }
+
+        .input-group input::placeholder {
+            color: var(--text-secondary);
+        }
+
+        .input-group select {
+            flex: 1;
+            border: none;
+            outline: none;
+            font-size: 16px;
+            background: transparent;
+            color: var(--text-primary);
+            cursor: pointer;
+        }
+
+        .input-group select option {
+            background: var(--bg-primary);
+            color: var(--text-primary);
+        }
+
+        .token-select {
+            display: flex;
+            align-items: center;
+            background: var(--bg-secondary);
+            padding: 8px 12px;
+            border-radius: 8px;
+            margin-left: 10px;
+            cursor: pointer;
+            font-weight: 600;
+            color: #6366f1;
+            transition: all 0.3s ease;
+            border: 1px solid var(--border-color);
+            min-width: 120px;
+            justify-content: center;
+        }
+
+        .token-select:hover {
+            background: var(--border-color);
+            transform: translateY(-1px);
+        }
+
+        .pair-selector {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .pair-selector label {
+            font-weight: 600;
+            color: var(--text-primary);
+            min-width: 100px;
+        }
+
+        .pair-selector select {
+            flex: 1;
+            background: var(--bg-primary);
+            border: 2px solid var(--border-color);
+            border-radius: 8px;
+            padding: 12px;
+            color: var(--text-primary);
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+        .pair-selector select:focus {
+            border-color: #6366f1;
+            outline: none;
+        }
+
+        .pair-selector select option {
+            background: var(--bg-primary);
+            color: var(--text-primary);
+        }
+
+        .btn {
+            width: 100%;
+            padding: 16px;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+            transition: left 0.5s;
+        }
+
+        .btn:hover::before {
+            left: 100%;
+        }
+
+        .btn-primary {
+            background: var(--primary-gradient);
+            color: white;
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(99, 102, 241, 0.4);
+        }
+
+        .btn:disabled {
+            background: var(--border-color);
+            color: var(--text-secondary);
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn.loading {
+            pointer-events: none;
+        }
+
+        .btn.loading::after {
+            content: '';
+            position: absolute;
+            width: 16px;
+            height: 16px;
+            margin: auto;
+            border: 2px solid transparent;
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        @keyframes spin {
+            from { transform: translate(-50%, -50%) rotate(0deg); }
+            to { transform: translate(-50%, -50%) rotate(360deg); }
+        }
+
+        .price-info {
+            background: var(--primary-gradient);
+            color: white;
+            padding: 20px;
+            border-radius: 12px;
+            margin: 20px 0;
+        }
+
+        .price-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .price-row:last-child {
+            margin-bottom: 0;
+        }
+
+        .status {
+            padding: 12px;
+            border-radius: 8px;
+            margin: 10px 0;
+            font-weight: 600;
+            border-left: 4px solid;
+        }
+
+        .status.success {
+            background: rgba(16, 185, 129, 0.1);
+            color: var(--success-color);
+            border-color: var(--success-color);
+        }
+
+        .status.error {
+            background: rgba(239, 68, 68, 0.1);
+            color: var(--error-color);
+            border-color: var(--error-color);
+        }
+
+        .status.info {
+            background: rgba(59, 130, 246, 0.1);
+            color: var(--info-color);
+            border-color: var(--info-color);
+        }
+
+        .status.warning {
+            background: rgba(245, 158, 11, 0.1);
+            color: var(--warning-color);
+            border-color: var(--warning-color);
+        }
+
+        .swap-icon {
+            display: flex;
+            justify-content: center;
+            margin: 15px 0;
+        }
+
+        .swap-icon button {
+            background: var(--primary-gradient);
+            border: none;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            color: white;
+            cursor: pointer;
+            font-size: 18px;
+            transition: all 0.3s ease;
+        }
+
+        .swap-icon button:hover {
+            transform: rotate(180deg) scale(1.1);
+        }
+
+        .liquidity-info {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .info-card {
+            background: var(--bg-primary);
+            padding: 20px;
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+        }
+
+        .info-card h3 {
+            color: #6366f1;
+            margin-bottom: 10px;
+        }
+
+        .balance-display {
+            background: var(--bg-primary);
+            padding: 10px;
+            border-radius: 8px;
+            margin-top: 5px;
+            font-family: 'Courier New', monospace;
+            color: var(--text-secondary);
+            border: 1px solid var(--border-color);
+        }
+
+        .debug-panel {
+            background: var(--bg-primary);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            margin-top: 20px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .debug-header {
+            padding: 15px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .debug-content {
+            padding: 15px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.85rem;
+            line-height: 1.4;
+        }
+
+        .log-entry {
+            margin-bottom: 5px;
+            padding: 5px;
+            border-radius: 4px;
+        }
+
+        .log-entry.info {
+            color: var(--info-color);
+        }
+
+        .log-entry.success {
+            color: var(--success-color);
+        }
+
+        .log-entry.error {
+            color: var(--error-color);
+            background: rgba(239, 68, 68, 0.1);
+        }
+
+        .log-entry.warning {
+            color: var(--warning-color);
+        }
+
+        .clear-logs {
+            background: var(--error-color);
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.8rem;
+        }
+
+        /* Modal Styles */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            backdrop-filter: blur(5px);
+        }
+
+        .modal {
+            background: var(--bg-secondary);
+            padding: 30px;
+            border-radius: 20px;
+            border: 1px solid var(--border-color);
+            max-width: 400px;
+            width: 90%;
+            position: relative;
+            animation: modalAppear 0.3s ease;
+        }
+
+        @keyframes modalAppear {
+            from { opacity: 0; transform: scale(0.9) translateY(-20px); }
+            to { opacity: 1; transform: scale(1) translateY(0); }
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .modal-header h2 {
+            color: var(--text-primary);
+            font-size: 1.5rem;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            font-size: 24px;
+            cursor: pointer;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 6px;
+            transition: all 0.3s ease;
+        }
+
+        .close-btn:hover {
+            background: var(--border-color);
+            color: var(--text-primary);
+        }
+
+        .wallet-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .wallet-option {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 15px;
+            background: var(--bg-primary);
+            border: 2px solid var(--border-color);
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .wallet-option:hover {
+            border-color: #6366f1;
+            background: rgba(99, 102, 241, 0.05);
+            transform: translateY(-1px);
+        }
+
+        .wallet-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            background: var(--primary-gradient);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+        }
+
+        .wallet-details {
+            flex: 1;
+        }
+
+        .wallet-name {
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 2px;
+        }
+
+        .wallet-status {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+            }
+            
+            .liquidity-info {
+                grid-template-columns: 1fr;
+            }
+            
+            .tabs {
+                flex-direction: column;
+            }
+
+            .wallet-connected {
+                grid-template-columns: 1fr;
+                text-align: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚀 Sonic DeFi AMM</h1>
+            <p>Advanced Multi-Pair Token Exchange on Sonic Testnet</p>
+        </div>
+
+        <div class="network-status">
+            <div class="status-dot"></div>
+            <span>Sonic Testnet</span>
+            <span id="networkStatus">Connecting...</span>
+        </div>
+
+        <div class="wallet-section">
+            <div id="walletDisconnected">
+                <button id="connectWallet" class="btn btn-primary">Connect Wallet</button>
+            </div>
+            <div id="walletConnected" class="wallet-connected" style="display: none;">
+                <div class="wallet-info">
+                    <div><strong>Connected:</strong> <span id="walletName">MetaMask</span></div>
+                    <div class="wallet-address" id="walletAddress"></div>
+                    <div><strong>Balance:</strong> <span id="nativeBalance">0 STT</span></div>
+                </div>
+                <button class="disconnect-btn" onclick="disconnectWallet()">Disconnect</button>
+            </div>
+        </div>
+
+        <div class="tabs">
+            <button class="tab active" data-tab="token">Token</button>
+            <button class="tab" data-tab="swap">Swap</button>
+            <button class="tab" data-tab="liquidity">Add Liquidity</button>
+            <button class="tab" data-tab="remove">Remove Liquidity</button>
+            <button class="tab" data-tab="ramp">Ramp</button>
+            <button class="tab" data-tab="pools">Pool Info</button>
+            <button class="tab" data-tab="debug">Debug</button>
+        </div>
+
+        <div id="token" class="tab-content active">
+            <h2>Token Manager</h2>
+            <iframe style="width: 100%; height: max-content;" src="token_builder.html" ></iframe>
+        </div>
+
+        <div id="swap" class="tab-content">
+            <h2>Multi-Pair Token Swap</h2>
+            
+            <div class="pair-selector">
+                <label>Trading Pair:</label>
+                <select id="swapPairSelect" onchange="selectPair(this.value)">
+                    <option value="STT_USSD">STT/USSD - Solareum ↔ US Standard Dollar</option>
+                    <option value="GX_USSD">GX/USSD - GX Token ↔ US Standard Dollar</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>From</label>
+                <div class="input-group">
+                    <input type="number" id="swapFromAmount" placeholder="0.0" step="any">
+                    <div class="token-select" id="fromTokenSelect">
+                        <span id="fromTokenSymbol">STT</span> ▼
+                    </div>
+                </div>
+                <div class="balance-display">Balance: <span id="fromBalance">0</span> <span id="fromBalanceSymbol">STT</span></div>
+            </div>
+
+            <div class="swap-icon">
+                <button onclick="swapTokenPositions()">⇅</button>
+            </div>
+
+            <div class="form-group">
+                <label>To</label>
+                <div class="input-group">
+                    <input type="number" id="swapToAmount" placeholder="0.0" readonly>
+                    <div class="token-select" id="toTokenSelect">
+                        <span id="toTokenSymbol">USSD</span> ▼
+                    </div>
+                </div>
+                <div class="balance-display">Balance: <span id="toBalance">0</span> <span id="toBalanceSymbol">USSD</span></div>
+            </div>
+
+            <div class="price-info" id="priceInfo" style="display: none;">
+                <div class="price-row">
+                    <span>Exchange Rate:</span>
+                    <span id="exchangeRate">-</span>
+                </div>
+                <div class="price-row">
+                    <span>Price Impact:</span>
+                    <span id="priceImpact">-</span>
+                </div>
+                <div class="price-row">
+                    <span>Minimum Received:</span>
+                    <span id="minimumReceived">-</span>
+                </div>
+            </div>
+
+            <button class="btn btn-primary" id="swapBtn" onclick="executeSwap()" disabled>Connect Wallet to Swap</button>
+        </div>
+
+        <div id="liquidity" class="tab-content">
+            <h2>Add Liquidity</h2>
+            
+            <div class="pair-selector">
+                <label>Trading Pair:</label>
+                <select id="liquidityPairSelect" onchange="selectPair(this.value)">
+                    <option value="STT_USSD">STT/USSD - Solareum ↔ US Standard Dollar</option>
+                    <option value="GX_USSD">GX/USSD - GX Token ↔ US Standard Dollar</option>
+                </select>
+            </div>
+
+            <div class="liquidity-info">
+                <div class="info-card">
+                    <h3 id="liquidityTokenA">Token A</h3>
+                    <div class="form-group">
+                        <div class="input-group">
+                            <input type="number" id="liquidityAmountA" placeholder="0.0" step="any">
+                            <div class="token-select">
+                                <span id="liquidityTokenASymbol">STT</span>
+                            </div>
+                        </div>
+                        <div class="balance-display">Balance: <span id="liquidityBalanceA">0</span> <span id="liquidityBalanceASymbol">STT</span></div>
+                    </div>
+                </div>
+                <div class="info-card">
+                    <h3 id="liquidityTokenB">Token B</h3>
+                    <div class="form-group">
+                        <div class="input-group">
+                            <input type="number" id="liquidityAmountB" placeholder="0.0" step="any">
+                            <div class="token-select">
+                                <span id="liquidityTokenBSymbol">USSD</span>
+                            </div>
+                        </div>
+                        <div class="balance-display">Balance: <span id="liquidityBalanceB">0</span> <span id="liquidityBalanceBSymbol">USSD</span></div>
+                    </div>
+                </div>
+            </div>
+            <button class="btn btn-primary" id="addLiquidityBtn" onclick="addLiquidity()" disabled>Connect Wallet to Add Liquidity</button>
+        </div>
+
+        <div id="remove" class="tab-content">
+            <h2>Remove Liquidity</h2>
+            
+            <div class="pair-selector">
+                <label>Trading Pair:</label>
+                <select id="removePairSelect" onchange="selectPair(this.value)">
+                    <option value="STT_USSD">STT/USSD - Solareum ↔ US Standard Dollar</option>
+                    <option value="GX_USSD">GX/USSD - GX Token ↔ US Standard Dollar</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>LP Tokens to Remove</label>
+                <div class="input-group">
+                    <input type="number" id="removeLiquidityAmount" placeholder="0.0" step="any">
+                    <div class="token-select">LP Tokens</div>
+                </div>
+                <div class="balance-display">LP Balance: <span id="lpBalance">0</span></div>
+            </div>
+
+            <div class="info-card" style="margin-bottom: 20px;">
+                <h3>You will receive:</h3>
+                <p><strong>Token A:</strong> <span id="removeTokenAAmount">0</span> <span id="removeTokenASymbol">STT</span></p>
+                <p><strong>Token B:</strong> <span id="removeTokenBAmount">0</span> <span id="removeTokenBSymbol">USSD</span></p>
+            </div>
+
+            <button class="btn btn-primary" id="removeLiquidityBtn" onclick="removeLiquidity()" disabled>Connect Wallet to Remove Liquidity</button>
+        </div>
+
+        <div id="ramp" class="tab-content">
+            <h2>Ramp Services</h2>
+            <iframe style="width: 100%; height: max-content;" src="ramp.html" ></iframe>
+        </div>
+
+        <div id="pools" class="tab-content">
+            <h2>Pool Information</h2>
+            
+            <div class="pair-selector">
+                <label>Trading Pair:</label>
+                <select id="poolsPairSelect" onchange="selectPair(this.value)">
+                    <option value="STT_USSD">STT/USSD - Solareum ↔ US Standard Dollar</option>
+                    <option value="GX_USSD">GX/USSD - GX Token ↔ US Standard Dollar</option>
+                </select>
+            </div>
+
+            <div class="liquidity-info">
+                <div class="info-card">
+                    <h3 id="poolInfoTitle">STT/USSD Pool</h3>
+                    <p><strong>Reserve A:</strong> <span id="reserveA">-</span></p>
+                    <p><strong>Reserve B:</strong> <span id="reserveB">-</span></p>
+                    <p><strong>Current Price:</strong> <span id="poolPrice">-</span></p>
+                    <p><strong>Your LP Tokens:</strong> <span id="userLPTokens">-</span></p>
+                </div>
+                <div class="info-card">
+                    <h3>Pool Statistics</h3>
+                    <p><strong>Total LP Supply:</strong> <span id="totalSupply">-</span></p>
+                    <p><strong>Your Pool Share:</strong> <span id="yourShare">-</span></p>
+                    <p><strong>24h Volume:</strong> <span id="volume24h">-</span></p>
+                    <p><strong>TVL:</strong> <span id="tvl">-</span></p>
+                </div>
+            </div>
+
+            <div style="margin-top: 20px;">
+                <h3>Contract Addresses</h3>
+                <div class="info-card">
+                    <p><strong>Factory:</strong> <span style="font-family: monospace; font-size: 0.85rem; word-break: break-all;" id="factoryAddress">-</span></p>
+                    <p><strong>Router:</strong> <span style="font-family: monospace; font-size: 0.85rem; word-break: break-all;" id="routerAddress">-</span></p>
+                    <p><strong>Pair:</strong> <span style="font-family: monospace; font-size: 0.85rem; word-break: break-all;" id="pairAddress">-</span></p>
+                </div>
+            </div>
+
+            <button class="btn btn-primary" onclick="refreshPoolInfo()">Refresh Pool Data</button>
+        </div>
+
+        <div id="debug" class="tab-content">
+            <h2>Debug Console</h2>
+            <div class="debug-panel">
+                <div class="debug-header">
+                    <h3>Transaction Logs</h3>
+                    <button class="clear-logs" onclick="clearLogs()">Clear Logs</button>
+                </div>
+                <div class="debug-content" id="debugLogs">
+                    <div class="log-entry info">Debug console initialized. Connect wallet to start debugging.</div>
+                </div>
+            </div>
+            
+            <div style="margin-top: 20px;">
+                <h3>Network Information</h3>
+                <div class="info-card">
+                    <p><strong>Chain ID:</strong> <span id="debugChainId">-</span></p>
+                    <p><strong>Block Number:</strong> <span id="debugBlockNumber">-</span></p>
+                    <p><strong>Gas Price:</strong> <span id="debugGasPrice">-</span></p>
+                    <p><strong>Connected Wallet:</strong> <span id="debugWalletType">-</span></p>
+                </div>
+            </div>
+        </div>
+
+        <div id="status"></div>
+    </div>
+
+    <!-- Wallet Selection Modal -->
+    <div id="walletModal" class="modal-overlay" style="display: none;">
+        <div class="modal">
+            <div class="modal-header">
+                <h2>Connect Wallet</h2>
+                <button class="close-btn" onclick="closeWalletModal()">&times;</button>
+            </div>
+            <div class="wallet-list">
+                <div class="wallet-option" onclick="connectSpecificWallet('metamask')">
+                    <div class="wallet-icon">M</div>
+                    <div class="wallet-details">
+                        <div class="wallet-name">MetaMask</div>
+                        <div class="wallet-status" id="metamaskStatus">Most popular Ethereum wallet</div>
+                    </div>
+                </div>
+                <div class="wallet-option" onclick="connectSpecificWallet('phantom')">
+                    <div class="wallet-icon">P</div>
+                    <div class="wallet-details">
+                        <div class="wallet-name">Phantom</div>
+                        <div class="wallet-status" id="phantomStatus">Multi-chain wallet</div>
+                    </div>
+                </div>
+                <div class="wallet-option" onclick="connectSpecificWallet('coinbase')">
+                    <div class="wallet-icon">C</div>
+                    <div class="wallet-details">
+                        <div class="wallet-name">Coinbase Wallet</div>
+                        <div class="wallet-status" id="coinbaseStatus">Self-custody wallet</div>
+                    </div>
+                </div>
+                <div class="wallet-option" onclick="connectSpecificWallet('walletconnect')">
+                    <div class="wallet-icon">W</div>
+                    <div class="wallet-details">
+                        <div class="wallet-name">WalletConnect</div>
+                        <div class="wallet-status" id="walletconnectStatus">Connect any wallet</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+
+        // Somnia Testnet Configuration
+        const SONIC_CONFIG = {
+            chainId: '0x3909', // 14601 in hex
+            chainName: 'Sonic Testnet',
+            nativeCurrency: {
+                name: 'S',
+                symbol: 'S',
+                decimals: 18
+            },
+            rpcUrls: ['https://rpc.soniclabs.com'],
+            blockExplorerUrls: ['https://sonicscan.org'],
+            multicallAddress: '0x841b8199E6d3Db3C6f264f6C2bd8848b3cA64223'
+        };
+
+
+        // // Sonic network configuration
+        // const SONIC_NETWORKS = {
+        //     mainnet: {
+        //         chainId: 146n,
+        //         chainName: "Sonic",
+        //         rpcUrl: "https://rpc.soniclabs.com",
+        //         explorerUrl: "https://sonicscan.org",
+        //         currencySymbol: "S"
+        //     },
+        //     testnet: {
+        //         chainId: 14601n,
+        //         chainName: "Sonic Testnet",
+        //         rpcUrl: "https://rpc.testnet.soniclabs.com",
+        //         explorerUrl: "https://testnet.sonicscan.org",
+        //         currencySymbol: "S",
+        //         faucet: "https://testnet.soniclabs.com/account"
+        //     }
+        // };
+
+        // // Determine which network to use based on URL parameter
+        // function getTargetNetwork() {
+        //     const urlParams = new URLSearchParams(window.location.search);
+        //     const networkParam = urlParams.get('network');
+            
+        //     return networkParam === 'testnet' ? SONIC_NETWORKS.testnet : SONIC_NETWORKS.mainnet;
+        // }
+
+        // let TARGET_NETWORK = getTargetNetwork();
+        // let selectedProvider = null;
+
+        // console.log(`loading rpc: ${TARGET_NETWORK.rpcUrl}, chain: ${TARGET_NETWORK.chainName} (${TARGET_NETWORK.chainId})`);
+
+
+
+        // Multi-pair configuration
+
+        const PAIRS_CONFIG = {
+            STT_USSD: {
+                name: 'S/USSD',
+                FACTORY_ADDRESS: "0xb06229eD4c53aEC803eC9E2c0d25B954685d77EC",
+                ROUTER_ADDRESS: "0xEd03899F0804B5BD49a06192f22900f89F3EC019",
+                PAIR_ADDRESS: "0x81001f1e0fC4aBB1F76444AFeEb148Bc8d1F9118",
+                TOKEN_A: {
+                    address: "0xF22eF0085f6511f70b01a68F360dCc56261F768a",
+                    symbol: "STT",
+                    name: "Somnia Testnet Token",
+                    decimals: 18
+                },
+                TOKEN_B: {
+                    address: "0x22d33Bf4e4076C018539bEBD7213A505fa980676",
+                    symbol: "USSD",
+                    name: "US Standard Dollar",
+                    decimals: 18
+                }
+            },
+            GX_USSD: {
+                name: 'GX/USSD',
+                FACTORY_ADDRESS: "0x221Fc0043237a93ddEc3b3C98faEA55D96eE2f96",
+                ROUTER_ADDRESS: "0xb04116B49E34078b35468205982e5CD1B6d566F7",
+                PAIR_ADDRESS: "0x7b22883D5ca7443eC45325CfF7BEdAD49BcC2110",
+                TOKEN_A: {
+                    address: "0xd0c6db65b4B6Fd9B0FF325520A30c2aa726133f2",
+                    symbol: "GX",
+                    name: "GX Token",
+                    decimals: 18
+                },
+                TOKEN_B: {
+                    address: "0x22d33Bf4e4076C018539bEBD7213A505fa980676",
+                    symbol: "USSD",
+                    name: "US Standard Dollar",
+                    decimals: 18
+                }
+            }
+        };
+
+        // Contract ABIs
+        const ERC20_ABI = [
+            "function name() view returns (string)",
+            "function symbol() view returns (string)",
+            "function decimals() view returns (uint8)",
+            "function balanceOf(address owner) view returns (uint256)",
+            "function approve(address spender, uint256 amount) external returns (bool)",
+            "function allowance(address owner, address spender) view returns (uint256)",
+            "function transfer(address to, uint256 amount) external returns (bool)"
+        ];
+
+        // Fixed Router ABI based on your deployment script
+        const ROUTER_ABI = [
+            "function addLiquidity(address tokenA, address tokenB, uint256 amountA, uint256 amountB, address to) external returns (uint256, uint256, uint256)",
+            "function removeLiquidity(address tokenA, address tokenB, uint256 liquidity, address to) external returns (uint256, uint256)",
+            "function swapExactTokensForTokens(uint256 amountIn, uint256 amountOutMin, address tokenIn, address tokenOut, address to) external returns (uint256)",
+            "function getAmountOut(uint256 amountIn, uint256 reserveIn, uint256 reserveOut) view returns (uint256)",
+            "function quote(uint256 amountA, uint256 reserveA, uint256 reserveB) view returns (uint256)"
+        ];
+
+        const PAIR_ABI = [
+            "function getReserves() view returns (uint256 reserve0, uint256 reserve1, uint256 blockTimestampLast)",
+            "function token0() view returns (address)",
+            "function token1() view returns (address)",
+            "function totalSupply() view returns (uint256)",
+            "function balanceOf(address owner) view returns (uint256)",
+            "function approve(address spender, uint256 amount) external returns (bool)",
+            "function allowance(address owner, address spender) view returns (uint256)"
+        ];
+
+
+        const FACTORY_ABI = [
+            "function getPair(address tokenA, address tokenB) view returns (address)"
+        ];
+        
+
+
+        // Global state
+        let provider, signer, userAddress, connectedWalletType;
+        let currentPair = 'STT_USSD';
+        let contracts = {};
+        let isTransacting = false;
+        let swapDirection = 'A_TO_B'; // A_TO_B or B_TO_A
+
+        // Debug logging
+        function debugLog(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = document.createElement('div');
+            logEntry.className = `log-entry ${type}`;
+            logEntry.innerHTML = `[${timestamp}] ${message}`;
+            
+            const debugLogs = document.getElementById('debugLogs');
+            debugLogs.appendChild(logEntry);
+            debugLogs.scrollTop = debugLogs.scrollHeight;
+            
+            console.log(`[SOMNIA-AMM] ${message}`);
+        }
+
+        function clearLogs() {
+            document.getElementById('debugLogs').innerHTML = '';
+            debugLog('Debug logs cleared', 'info');
+        }
+
+        // Initialize application
+        async function init() {
+            debugLog('Initializing Somnia AMM Application...', 'info');
+            
+            setupTabs();
+            setupEventListeners();
+            
+            // Check if wallet was previously connected
+            if (localStorage.getItem('walletConnected') === 'true') {
+                const walletType = localStorage.getItem('connectedWalletType');
+                if (walletType) {
+                    debugLog(`Attempting to reconnect ${walletType}...`, 'info');
+                    await connectSpecificWallet(walletType, false);
+                }
+            }
+            
+            await updateNetworkInfo();
+            debugLog('Application initialized successfully', 'success');
+        }
+
+        // Setup tabs
+        function setupTabs() {
+            const tabs = document.querySelectorAll('.tab');
+            const contents = document.querySelectorAll('.tab-content');
+
+            tabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    const target = tab.dataset.tab;
+                    
+                    tabs.forEach(t => t.classList.remove('active'));
+                    contents.forEach(c => c.classList.remove('active'));
+                    
+                    tab.classList.add('active');
+                    document.getElementById(target).classList.add('active');
+                    
+                    debugLog(`Switched to ${target} tab`, 'info');
+                });
+            });
+        }
+
+        function selectPair(pairName) {
+            currentPair = pairName;
+            
+            // Update all dropdowns
+            document.getElementById('swapPairSelect').value = pairName;
+            document.getElementById('liquidityPairSelect').value = pairName;
+            document.getElementById('removePairSelect').value = pairName;
+            document.getElementById('poolsPairSelect').value = pairName;
+            
+            updateUIForPair(pairName);
+            debugLog(`Selected pair: ${PAIRS_CONFIG[pairName].name}`, 'info');
+            
+            if (userAddress) {
+                updateBalances();
+                updatePoolInfo();
+            }
+        }
+
+        function updateUIForPair(pairName) {
+            const config = PAIRS_CONFIG[pairName];
+            
+            // Update swap interface
+            document.getElementById('fromTokenSymbol').textContent = config.TOKEN_A.symbol;
+            document.getElementById('toTokenSymbol').textContent = config.TOKEN_B.symbol;
+            document.getElementById('fromBalanceSymbol').textContent = config.TOKEN_A.symbol;
+            document.getElementById('toBalanceSymbol').textContent = config.TOKEN_B.symbol;
+            
+            // Update liquidity interface
+            document.getElementById('liquidityTokenA').textContent = `${config.TOKEN_A.name} (${config.TOKEN_A.symbol})`;
+            document.getElementById('liquidityTokenB').textContent = `${config.TOKEN_B.name} (${config.TOKEN_B.symbol})`;
+            document.getElementById('liquidityTokenASymbol').textContent = config.TOKEN_A.symbol;
+            document.getElementById('liquidityTokenBSymbol').textContent = config.TOKEN_B.symbol;
+            document.getElementById('liquidityBalanceASymbol').textContent = config.TOKEN_A.symbol;
+            document.getElementById('liquidityBalanceBSymbol').textContent = config.TOKEN_B.symbol;
+            
+            // Update remove liquidity interface
+            document.getElementById('removeTokenASymbol').textContent = config.TOKEN_A.symbol;
+            document.getElementById('removeTokenBSymbol').textContent = config.TOKEN_B.symbol;
+            
+            // Update pool info
+            document.getElementById('poolInfoTitle').textContent = `${config.name} Pool`;
+            
+            // Clear amounts and reset swap direction
+            document.getElementById('swapFromAmount').value = '';
+            document.getElementById('swapToAmount').value = '';
+            document.getElementById('liquidityAmountA').value = '';
+            document.getElementById('liquidityAmountB').value = '';
+            document.getElementById('removeLiquidityAmount').value = '';
+            document.getElementById('priceInfo').style.display = 'none';
+            swapDirection = 'A_TO_B';
+        }
+
+        // Event listeners
+        function setupEventListeners() {
+            document.getElementById('connectWallet').addEventListener('click', showWalletModal);
+            document.getElementById('swapFromAmount').addEventListener('input', calculateSwapOutput);
+            document.getElementById('liquidityAmountA').addEventListener('input', calculateLiquidityB);
+            document.getElementById('removeLiquidityAmount').addEventListener('input', calculateRemoveAmounts);
+            
+            // Account and network change listeners
+            if (typeof window.ethereum !== 'undefined') {
+                window.ethereum.on('accountsChanged', handleAccountsChanged);
+                window.ethereum.on('chainChanged', handleChainChanged);
+                window.ethereum.on('disconnect', handleDisconnect);
+            }
+        }
+
+        // Wallet connection
+        function showWalletModal() {
+            document.getElementById('walletModal').style.display = 'flex';
+            updateWalletStatuses();
+        }
+
+        function closeWalletModal() {
+            document.getElementById('walletModal').style.display = 'none';
+        }
+
+        function updateWalletStatuses() {
+            // MetaMask
+            if (typeof window.ethereum !== 'undefined' && window.ethereum.isMetaMask) {
+                document.getElementById('metamaskStatus').textContent = 'Ready to connect';
+            } else {
+                document.getElementById('metamaskStatus').textContent = 'Not installed';
+            }
+            
+            // Phantom
+            if (typeof window.phantom !== 'undefined') {
+                document.getElementById('phantomStatus').textContent = 'Ready to connect';
+            } else {
+                document.getElementById('phantomStatus').textContent = 'Not installed';
+            }
+            
+            // Coinbase
+            if (typeof window.ethereum !== 'undefined' && window.ethereum.isCoinbaseWallet) {
+                document.getElementById('coinbaseStatus').textContent = 'Ready to connect';
+            } else {
+                document.getElementById('coinbaseStatus').textContent = 'Not installed';
+            }
+        }
+
+        /* async function connectSpecificWallet(walletType, showModal = true) {
+            try {
+                debugLog(`Connecting to ${walletType}...`, 'info');
+                
+                let ethereum;
+                
+                switch (walletType) {
+                    case 'metamask':
+                        if (!window.ethereum?.providers) throw new Error('No multiple providers detected');
+                        ethereum = window.ethereum.providers.find(p => p.isMetaMask);
+                        if (!ethereum) throw new Error('MetaMask not installed');
+                        break;
+
+                    case 'phantom':
+                        ethereum = window.ethereum.providers?.find(p => p.isPhantom) || window.phantom?.ethereum;
+                        if (!ethereum) throw new Error('Phantom not installed');
+                        break;
+
+                    case 'coinbase':
+                        ethereum = window.ethereum.providers?.find(p => p.isCoinbaseWallet);
+                        if (!ethereum) throw new Error('Coinbase Wallet not installed');
+                        break;
+                        
+                    default:
+                        // Fallback for single provider
+                        if (window.ethereum) {
+                            ethereum = window.ethereum;
+                        } else {
+                            throw new Error('No wallet detected');
+                        }
+                }
+
+                // Request account access
+                await ethereum.request({ method: 'eth_requestAccounts' });
+                
+                // Initialize provider and signer
+                provider = new ethers.providers.Web3Provider(ethereum);
+                signer = provider.getSigner();
+                userAddress = await signer.getAddress();
+                connectedWalletType = walletType;
+
+                debugLog(`Connected to ${userAddress}`, 'success');
+
+                // Check and switch to Somnia network
+                await ensureSomniaNetwork();
+
+                // Initialize contracts
+                await initializeContracts();
+
+                // Update UI
+                await updateWalletUI();
+                
+                // Save connection state
+                localStorage.setItem('walletConnected', 'true');
+                localStorage.setItem('connectedWalletType', walletType);
+
+                if (showModal) {
+                    closeWalletModal();
+                }
+
+                debugLog(`${walletType} connected successfully`, 'success');
+                showStatus(`${walletType} connected successfully!`, 'success');
+
+            } catch (error) {
+                debugLog(`Failed to connect ${walletType}: ${error.message}`, 'error');
+                showStatus(`Failed to connect ${walletType}: ${error.message}`, 'error');
+            }
+        } */
+
+        async function connectSpecificWallet(walletType, showModal = true) {
+          try {
+              debugLog(`Connecting to ${walletType}...`, 'info');
+
+              let ethereum;
+
+              switch (walletType) {
+                  case 'metamask':
+                      if (window.ethereum?.providers) {
+                          ethereum = window.ethereum.providers.find(p => p.isMetaMask);
+                      } else if (window.ethereum?.isMetaMask) {
+                          ethereum = window.ethereum;
+                      }
+                      if (!ethereum) throw new Error('MetaMask not installed');
+                      break;
+
+                  case 'phantom':
+                      ethereum = window.ethereum?.providers?.find(p => p.isPhantom) || window.phantom?.ethereum;
+                      if (!ethereum) throw new Error('Phantom not installed');
+                      break;
+
+                  case 'coinbase':
+                      ethereum = window.ethereum?.providers?.find(p => p.isCoinbaseWallet);
+                      if (!ethereum) throw new Error('Coinbase Wallet not installed');
+                      break;
+
+                  default:
+                      if (window.ethereum) {
+                          ethereum = window.ethereum;
+                      } else {
+                          throw new Error('No wallet detected');
+                      }
+              }
+
+              await ethereum.request({ method: 'eth_requestAccounts' });
+              provider = new ethers.providers.Web3Provider(ethereum);
+              signer = provider.getSigner();
+              userAddress = await signer.getAddress();
+              connectedWalletType = walletType;
+
+              debugLog(`Connected to ${userAddress}`, 'success');
+              await ensureSomniaNetwork();
+              await initializeContracts();
+              await updateWalletUI();
+
+              localStorage.setItem('walletConnected', 'true');
+              localStorage.setItem('connectedWalletType', walletType);
+
+              if (showModal) closeWalletModal();
+
+              debugLog(`${walletType} connected successfully`, 'success');
+              showStatus(`${walletType} connected successfully!`, 'success');
+
+          } catch (error) {
+              debugLog(`Failed to connect ${walletType}: ${error.message}`, 'error');
+              showStatus(`Failed to connect ${walletType}: ${error.message}`, 'error');
+          }
+      }
+
+
+        async function ensureSomniaNetwork() {
+            try {
+                const network = await provider.getNetwork();
+                debugLog(`Current network: ${network.name} (${network.chainId})`, 'info');
+
+                if (network.chainId !== parseInt(SONIC_CONFIG.chainId, 16)) {
+                    debugLog('Switching to Somnia Testnet...', 'info');
+
+                    try {
+                        await provider.provider.request({
+                            method: 'wallet_switchEthereumChain',
+                            params: [{ chainId: SONIC_CONFIG.chainId }],
+                        });
+                    } catch (switchError) {
+                        if (switchError.code === 4902) {
+                            debugLog('Adding Somnia Testnet to wallet...', 'info');
+
+                            // clone config but remove multicallAddress
+                            const { multicallAddress, ...addChainConfig } = SONIC_CONFIG;
+
+                            await provider.provider.request({
+                                method: 'wallet_addEthereumChain',
+                                params: [addChainConfig],
+                            });
+                        } else {
+                            throw switchError;
+                        }
+                    }
+
+                    // Re-initialize provider after network switch
+                    provider = new ethers.providers.Web3Provider(provider.provider);
+                    signer = provider.getSigner();
+
+                    debugLog('Successfully switched to Sonic', 'success');
+                }
+            } catch (error) {
+                debugLog(`Network switch failed: ${error.message}`, 'error');
+                throw error;
+            }
+        }
+
+        async function initializeContracts() {
+            try {
+                debugLog('Initializing contracts for all pairs...', 'info');
+                contracts = {};
+                
+                for (const [pairName, config] of Object.entries(PAIRS_CONFIG)) {
+                  contracts[pairName] = {
+                      router: new ethers.Contract(config.ROUTER_ADDRESS, ROUTER_ABI, signer),
+                      pair: new ethers.Contract(config.PAIR_ADDRESS, PAIR_ABI, signer),
+                      tokenA: new ethers.Contract(config.TOKEN_A.address, ERC20_ABI, signer),
+                      tokenB: new ethers.Contract(config.TOKEN_B.address, ERC20_ABI, signer),
+                      factory: new ethers.Contract(config.FACTORY_ADDRESS, FACTORY_ABI, signer) // ← add this
+                  };
+                }
+                
+                debugLog('All contracts initialized successfully', 'success');
+            } catch (error) {
+                debugLog(`Contract initialization failed: ${error.message}`, 'error');
+                throw error;
+            }
+        }
+
+        async function updateWalletUI() {
+            try {
+                // Update wallet info
+                document.getElementById('walletDisconnected').style.display = 'none';
+                document.getElementById('walletConnected').style.display = 'flex';
+                document.getElementById('walletName').textContent = connectedWalletType.charAt(0).toUpperCase() + connectedWalletType.slice(1);
+                document.getElementById('walletAddress').textContent = `${userAddress.substring(0, 6)}...${userAddress.substring(38)}`;
+                
+                // Update native balance
+                const balance = await provider.getBalance(userAddress);
+                document.getElementById('nativeBalance').textContent = `${parseFloat(ethers.utils.formatEther(balance)).toFixed(4)} STT`;
+                
+                // Enable buttons
+                document.getElementById('swapBtn').disabled = false;
+                document.getElementById('swapBtn').textContent = 'Swap';
+                document.getElementById('addLiquidityBtn').disabled = false;
+                document.getElementById('addLiquidityBtn').textContent = 'Add Liquidity';
+                document.getElementById('removeLiquidityBtn').disabled = false;
+                document.getElementById('removeLiquidityBtn').textContent = 'Remove Liquidity';
+                
+                // Update balances and pool info
+                await updateBalances();
+                await updatePoolInfo();
+                await updateNetworkInfo();
+                
+                debugLog('Wallet UI updated successfully', 'success');
+                
+            } catch (error) {
+                debugLog(`Failed to update wallet UI: ${error.message}`, 'error');
+            }
+        }
+
+        async function updateBalances() {
+            if (!userAddress) return;
+            
+            try {
+                const config = PAIRS_CONFIG[currentPair];
+                const pairContracts = contracts[currentPair];
+                
+                debugLog(`Updating balances for ${config.name}...`, 'info');
+                
+                // Token balances
+                const [balanceA, balanceB] = await Promise.all([
+                    pairContracts.tokenA.balanceOf(userAddress),
+                    pairContracts.tokenB.balanceOf(userAddress)
+                ]);
+                
+                const formattedBalanceA = parseFloat(ethers.utils.formatUnits(balanceA, config.TOKEN_A.decimals)).toFixed(4);
+                const formattedBalanceB = parseFloat(ethers.utils.formatUnits(balanceB, config.TOKEN_B.decimals)).toFixed(4);
+                
+                // Update swap balances based on current direction
+                if (swapDirection === 'A_TO_B') {
+                    document.getElementById('fromBalance').textContent = formattedBalanceA;
+                    document.getElementById('toBalance').textContent = formattedBalanceB;
+                } else {
+                    document.getElementById('fromBalance').textContent = formattedBalanceB;
+                    document.getElementById('toBalance').textContent = formattedBalanceA;
+                }
+                
+                // Update liquidity balances
+                document.getElementById('liquidityBalanceA').textContent = formattedBalanceA;
+                document.getElementById('liquidityBalanceB').textContent = formattedBalanceB;
+                
+                // LP token balance
+                const lpBalance = await pairContracts.pair.balanceOf(userAddress);
+                const formattedLPBalance = parseFloat(ethers.utils.formatEther(lpBalance)).toFixed(6);
+                document.getElementById('lpBalance').textContent = formattedLPBalance;
+                document.getElementById('userLPTokens').textContent = formattedLPBalance;
+                
+                debugLog(`Balances updated: ${formattedBalanceA} ${config.TOKEN_A.symbol}, ${formattedBalanceB} ${config.TOKEN_B.symbol}, ${formattedLPBalance} LP`, 'success');
+                
+            } catch (error) {
+                debugLog(`Failed to update balances: ${error.message}`, 'error');
+            }
+        }
+
+        async function updatePoolInfo() {
+            try {
+                const config = PAIRS_CONFIG[currentPair];
+                const pairContracts = contracts[currentPair];
+                
+                debugLog(`Updating pool info for ${config.name}...`, 'info');
+                
+                // Get pool data
+                const [reserves, token0, totalSupply] = await Promise.all([
+                    pairContracts.pair.getReserves(),
+                    pairContracts.pair.token0(),
+                    pairContracts.pair.totalSupply()
+                ]);
+                
+                // Determine token order - Fixed the comparison
+                const isTokenAToken0 = token0.toLowerCase() === config.TOKEN_A.address.toLowerCase();
+                const reserveA = isTokenAToken0 ? reserves.reserve0 : reserves.reserve1;
+                const reserveB = isTokenAToken0 ? reserves.reserve1 : reserves.reserve0;
+                
+                const formattedReserveA = parseFloat(ethers.utils.formatUnits(reserveA, config.TOKEN_A.decimals)).toFixed(2);
+                const formattedReserveB = parseFloat(ethers.utils.formatUnits(reserveB, config.TOKEN_B.decimals)).toFixed(2);
+                const formattedTotalSupply = parseFloat(ethers.utils.formatEther(totalSupply)).toFixed(4);
+                
+                // Update UI
+                document.getElementById('reserveA').textContent = `${formattedReserveA} ${config.TOKEN_A.symbol}`;
+                document.getElementById('reserveB').textContent = `${formattedReserveB} ${config.TOKEN_B.symbol}`;
+                document.getElementById('totalSupply').textContent = formattedTotalSupply;
+                
+                // Calculate price
+                if (parseFloat(formattedReserveA) > 0) {
+                    const price = parseFloat(formattedReserveB) / parseFloat(formattedReserveA);
+                    document.getElementById('poolPrice').textContent = `1 ${config.TOKEN_A.symbol} = ${price.toFixed(6)} ${config.TOKEN_B.symbol}`;
+                } else {
+                    document.getElementById('poolPrice').textContent = 'No liquidity';
+                }
+                
+                // Update contract addresses
+                document.getElementById('factoryAddress').textContent = config.FACTORY_ADDRESS;
+                document.getElementById('routerAddress').textContent = config.ROUTER_ADDRESS;
+                document.getElementById('pairAddress').textContent = config.PAIR_ADDRESS;
+                
+                // Calculate user's pool share
+                if (userAddress && parseFloat(formattedTotalSupply) > 0) {
+                    const userLP = await pairContracts.pair.balanceOf(userAddress);
+                    const userLPFormatted = parseFloat(ethers.utils.formatEther(userLP));
+                    const sharePercentage = (userLPFormatted / parseFloat(formattedTotalSupply)) * 100;
+                    document.getElementById('yourShare').textContent = `${sharePercentage.toFixed(4)}%`;
+                } else {
+                    document.getElementById('yourShare').textContent = '0%';
+                }
+                
+                debugLog(`Pool info updated: ${formattedReserveA}/${formattedReserveB}, LP Supply: ${formattedTotalSupply}`, 'success');
+                
+            } catch (error) {
+                debugLog(`Failed to update pool info: ${error.message}`, 'error');
+                // Set default values on error
+                document.getElementById('reserveA').textContent = '0';
+                document.getElementById('reserveB').textContent = '0';
+                document.getElementById('poolPrice').textContent = 'Pool not initialized';
+                document.getElementById('totalSupply').textContent = '0';
+                document.getElementById('yourShare').textContent = '0%';
+            }
+        }
+
+        async function updateNetworkInfo() {
+            try {
+                if (!provider) {
+                    document.getElementById('networkStatus').textContent = 'Disconnected';
+                    return;
+                }
+                
+                const [network, blockNumber, gasPrice] = await Promise.all([
+                    provider.getNetwork(),
+                    provider.getBlockNumber(),
+                    provider.getGasPrice()
+                ]);
+                
+                document.getElementById('networkStatus').textContent = 'Connected';
+                document.getElementById('debugChainId').textContent = network.chainId;
+                document.getElementById('debugBlockNumber').textContent = blockNumber;
+                document.getElementById('debugGasPrice').textContent = `${parseFloat(ethers.utils.formatUnits(gasPrice, 'gwei')).toFixed(2)} gwei`;
+                document.getElementById('debugWalletType').textContent = connectedWalletType || 'None';
+                
+            } catch (error) {
+                debugLog(`Failed to update network info: ${error.message}`, 'error');
+                document.getElementById('networkStatus').textContent = 'Error';
+            }
+        }
+
+        // Fixed swap calculation
+        // async function calculateSwapOutput() {
+        //     const amountIn = document.getElementById('swapFromAmount').value;
+        //     if (!amountIn || !contracts[currentPair] || parseFloat(amountIn) <= 0) {
+        //         document.getElementById('swapToAmount').value = '';
+        //         document.getElementById('priceInfo').style.display = 'none';
+        //         return;
+        //     }
+
+        //     try {
+        //         const config = PAIRS_CONFIG[currentPair];
+        //         const pairContracts = contracts[currentPair];
+                
+        //         const fromSymbol = document.getElementById('fromTokenSymbol').textContent;
+        //         const toSymbol = document.getElementById('toTokenSymbol').textContent;
+                
+        //         debugLog(`Calculating swap output for ${amountIn} ${fromSymbol}...`, 'info');
+                
+        //         const reserves = await pairContracts.pair.getReserves();
+        //         const token0 = await pairContracts.pair.token0();
+                
+        //         // Determine token order and reserves
+        //         const isTokenAToken0 = token0.toLowerCase() === config.TOKEN_A.address.toLowerCase();
+        //         let reserveIn, reserveOut, amountInWei;
+                
+        //         if (swapDirection === 'A_TO_B') {
+        //             // Swapping Token A for Token B
+        //             reserveIn = isTokenAToken0 ? reserves.reserve0 : reserves.reserve1;
+        //             reserveOut = isTokenAToken0 ? reserves.reserve1 : reserves.reserve0;
+        //             amountInWei = ethers.utils.parseUnits(amountIn, config.TOKEN_A.decimals);
+        //         } else {
+        //             // Swapping Token B for Token A
+        //             reserveIn = isTokenAToken0 ? reserves.reserve1 : reserves.reserve0;
+        //             reserveOut = isTokenAToken0 ? reserves.reserve0 : reserves.reserve1;
+        //             amountInWei = ethers.utils.parseUnits(amountIn, config.TOKEN_B.decimals);
+        //         }
+                
+        //         const amountOut = await pairContracts.router.getAmountOut(amountInWei, reserveIn, reserveOut);
+                
+        //         const outputDecimals = swapDirection === 'A_TO_B' ? config.TOKEN_B.decimals : config.TOKEN_A.decimals;
+        //         const formattedAmountOut = ethers.utils.formatUnits(amountOut, outputDecimals);
+        //         document.getElementById('swapToAmount').value = parseFloat(formattedAmountOut).toFixed(6);
+                
+        //         // Calculate price impact and other info
+        //         const priceImpact = (parseFloat(amountIn) / parseFloat(ethers.utils.formatUnits(reserveIn, swapDirection === 'A_TO_B' ? config.TOKEN_A.decimals : config.TOKEN_B.decimals))) * 100;
+        //         const exchangeRate = parseFloat(formattedAmountOut) / parseFloat(amountIn);
+        //         const minimumReceived = parseFloat(formattedAmountOut) * 0.995; // 0.5% slippage tolerance
+                
+        //         document.getElementById('exchangeRate').textContent = `1 ${fromSymbol} = ${exchangeRate.toFixed(6)} ${toSymbol}`;
+        //         document.getElementById('priceImpact').textContent = `${priceImpact.toFixed(3)}%`;
+        //         document.getElementById('minimumReceived').textContent = `${minimumReceived.toFixed(6)} ${toSymbol}`;
+                
+        //         document.getElementById('priceInfo').style.display = 'block';
+                
+        //         debugLog(`Swap calculation: ${amountIn} ${fromSymbol} → ${parseFloat(formattedAmountOut).toFixed(6)} ${toSymbol}`, 'success');
+                
+        //     } catch (error) {
+        //         debugLog(`Swap calculation failed: ${error.message}`, 'error');
+        //         document.getElementById('swapToAmount').value = '';
+        //         document.getElementById('priceInfo').style.display = 'none';
+        //     }
+        // }
+
+        // Helper to fetch reserves dynamically
+        async function getPairReserves(config) {
+            const PAIR_ABI = [
+                "function getReserves() view returns (uint112 reserve0, uint112 reserve1, uint32 blockTimestampLast)",
+                "function token0() view returns (address)",
+                "function token1() view returns (address)"
+            ];
+
+            // 1. Get pair address from factory
+            const pairAddress = await contracts[currentPair].factory.getPair(config.TOKEN_A.address, config.TOKEN_B.address);
+            if (pairAddress === ethers.constants.AddressZero) {
+                throw new Error("Pair does not exist yet");
+            }
+
+            // 2. Bind AMMPair contract
+            const pair = new ethers.Contract(pairAddress, PAIR_ABI, provider);
+
+            // 3. Get reserves and token order
+            const [reserve0, reserve1] = await pair.getReserves();
+            const token0 = await pair.token0();
+
+            return { reserve0, reserve1, token0, pairAddress };
+        }
+
+        async function calculateSwapOutput() {
+            const amountIn = document.getElementById('swapFromAmount').value;
+            if (!amountIn || !contracts[currentPair] || parseFloat(amountIn) <= 0) {
+                document.getElementById('swapToAmount').value = '';
+                document.getElementById('priceInfo').style.display = 'none';
+                return;
+            }
+
+            try {
+                const config = PAIRS_CONFIG[currentPair];
+                const fromSymbol = document.getElementById('fromTokenSymbol').textContent;
+                const toSymbol = document.getElementById('toTokenSymbol').textContent;
+
+                debugLog(`Calculating swap output for ${amountIn} ${fromSymbol}...`, 'info');
+
+                // 🔹 Use factory → pair → reserves
+                const { reserve0, reserve1, token0 } = await getPairReserves(config);
+
+                // Determine token order
+                const isTokenAToken0 = token0.toLowerCase() === config.TOKEN_A.address.toLowerCase();
+                let reserveIn, reserveOut, amountInWei;
+
+                if (swapDirection === 'A_TO_B') {
+                    reserveIn = isTokenAToken0 ? reserve0 : reserve1;
+                    reserveOut = isTokenAToken0 ? reserve1 : reserve0;
+                    amountInWei = ethers.utils.parseUnits(amountIn, config.TOKEN_A.decimals);
+                } else {
+                    reserveIn = isTokenAToken0 ? reserve1 : reserve0;
+                    reserveOut = isTokenAToken0 ? reserve0 : reserve1;
+                    amountInWei = ethers.utils.parseUnits(amountIn, config.TOKEN_B.decimals);
+                }
+
+                // Router calculation
+                const amountOut = await contracts[currentPair].router.getAmountOut(amountInWei, reserveIn, reserveOut);
+
+                const outputDecimals = swapDirection === 'A_TO_B' ? config.TOKEN_B.decimals : config.TOKEN_A.decimals;
+                const formattedAmountOut = ethers.utils.formatUnits(amountOut, outputDecimals);
+
+                document.getElementById('swapToAmount').value = parseFloat(formattedAmountOut).toFixed(6);
+
+                // Extra info
+                const priceImpact = (parseFloat(amountIn) / parseFloat(ethers.utils.formatUnits(
+                    reserveIn,
+                    swapDirection === 'A_TO_B' ? config.TOKEN_A.decimals : config.TOKEN_B.decimals
+                ))) * 100;
+                const exchangeRate = parseFloat(formattedAmountOut) / parseFloat(amountIn);
+                const minimumReceived = parseFloat(formattedAmountOut) * 0.995; // 0.5% slippage
+
+                document.getElementById('exchangeRate').textContent = `1 ${fromSymbol} = ${exchangeRate.toFixed(6)} ${toSymbol}`;
+                document.getElementById('priceImpact').textContent = `${priceImpact.toFixed(3)}%`;
+                document.getElementById('minimumReceived').textContent = `${minimumReceived.toFixed(6)} ${toSymbol}`;
+
+                document.getElementById('priceInfo').style.display = 'block';
+
+                debugLog(`Swap calculation: ${amountIn} ${fromSymbol} → ${parseFloat(formattedAmountOut).toFixed(6)} ${toSymbol}`, 'success');
+
+            } catch (error) {
+                debugLog(`Swap calculation failed: ${error.message}`, 'error');
+                document.getElementById('swapToAmount').value = '';
+                document.getElementById('priceInfo').style.display = 'none';
+            }
+        }
+
+        function swapTokenPositions() {
+            const config = PAIRS_CONFIG[currentPair];
+            
+            // Toggle swap direction
+            swapDirection = swapDirection === 'A_TO_B' ? 'B_TO_A' : 'A_TO_B';
+            
+            // Update UI based on new direction
+            if (swapDirection === 'A_TO_B') {
+                document.getElementById('fromTokenSymbol').textContent = config.TOKEN_A.symbol;
+                document.getElementById('toTokenSymbol').textContent = config.TOKEN_B.symbol;
+                document.getElementById('fromBalanceSymbol').textContent = config.TOKEN_A.symbol;
+                document.getElementById('toBalanceSymbol').textContent = config.TOKEN_B.symbol;
+            } else {
+                document.getElementById('fromTokenSymbol').textContent = config.TOKEN_B.symbol;
+                document.getElementById('toTokenSymbol').textContent = config.TOKEN_A.symbol;
+                document.getElementById('fromBalanceSymbol').textContent = config.TOKEN_B.symbol;
+                document.getElementById('toBalanceSymbol').textContent = config.TOKEN_A.symbol;
+            }
+            
+            // Update balances
+            if (userAddress) {
+                updateBalances();
+            }
+            
+            // Clear amounts and recalculate
+            document.getElementById('swapFromAmount').value = '';
+            document.getElementById('swapToAmount').value = '';
+            document.getElementById('priceInfo').style.display = 'none';
+            
+            debugLog(`Swapped token positions: ${document.getElementById('fromTokenSymbol').textContent} ↔ ${document.getElementById('toTokenSymbol').textContent}`, 'info');
+        }
+
+        async function executeSwap() {
+            if (!userAddress || isTransacting) {
+                showStatus('Please connect wallet or wait for current transaction', 'warning');
+                return;
+            }
+
+            const amountIn = document.getElementById('swapFromAmount').value;
+            if (!amountIn || parseFloat(amountIn) <= 0) {
+                showStatus('Please enter a valid amount', 'error');
+                return;
+            }
+
+            try {
+                isTransacting = true;
+                const config = PAIRS_CONFIG[currentPair];
+                const pairContracts = contracts[currentPair];
+                const fromSymbol = document.getElementById('fromTokenSymbol').textContent;
+                const toSymbol = document.getElementById('toTokenSymbol').textContent;
+                
+                debugLog(`Starting swap: ${amountIn} ${fromSymbol} → ${toSymbol}`, 'info');
+                
+                // Determine which tokens are being swapped based on direction
+                let tokenIn, tokenOut, tokenInConfig, tokenOutConfig;
+                
+                if (swapDirection === 'A_TO_B') {
+                    tokenIn = pairContracts.tokenA;
+                    tokenOut = pairContracts.tokenB;
+                    tokenInConfig = config.TOKEN_A;
+                    tokenOutConfig = config.TOKEN_B;
+                } else {
+                    tokenIn = pairContracts.tokenB;
+                    tokenOut = pairContracts.tokenA;
+                    tokenInConfig = config.TOKEN_B;
+                    tokenOutConfig = config.TOKEN_A;
+                }
+                
+                const amountInWei = ethers.utils.parseUnits(amountIn, tokenInConfig.decimals);
+                
+                // Set button to loading state
+                const swapBtn = document.getElementById('swapBtn');
+                swapBtn.classList.add('loading');
+                swapBtn.disabled = true;
+                swapBtn.textContent = 'Swapping...';
+                
+                showStatus('Checking token allowance...', 'info');
+                
+                // Check and approve if needed
+                const allowance = await tokenIn.allowance(userAddress, config.ROUTER_ADDRESS);
+                debugLog(`Current allowance: ${ethers.utils.formatUnits(allowance, tokenInConfig.decimals)} ${fromSymbol}`, 'info');
+                
+                if (allowance.lt(amountInWei)) {
+                    debugLog(`Approving ${amountIn} ${fromSymbol}...`, 'info');
+                    showStatus('Approving token spend...', 'info');
+                    
+                    const approveTx = await tokenIn.approve(config.ROUTER_ADDRESS, amountInWei);
+                    debugLog(`Approval transaction: ${approveTx.hash}`, 'info');
+                    
+                    await approveTx.wait();
+                    debugLog('Token approval confirmed', 'success');
+                }
+                
+                showStatus('Executing swap...', 'info');
+                
+                // Calculate minimum amount out (0.5% slippage tolerance)
+                const expectedAmountOut = document.getElementById('swapToAmount').value;
+                if (!expectedAmountOut || parseFloat(expectedAmountOut) <= 0) {
+                    throw new Error('Invalid output amount calculated');
+                }
+                
+                const minAmountOut = ethers.utils.parseUnits((parseFloat(expectedAmountOut) * 0.995).toString(), tokenOutConfig.decimals);
+                
+                debugLog(`Expected out: ${expectedAmountOut} ${toSymbol}, Min out: ${ethers.utils.formatUnits(minAmountOut, tokenOutConfig.decimals)} ${toSymbol}`, 'info');
+                
+                // Execute swap
+                const swapTx = await pairContracts.router.swapExactTokensForTokens(
+                    amountInWei,
+                    minAmountOut,
+                    tokenInConfig.address,
+                    tokenOutConfig.address,
+                    userAddress
+                );
+                
+                debugLog(`Swap transaction submitted: ${swapTx.hash}`, 'info');
+                showStatus(`Swap transaction submitted: ${swapTx.hash.substring(0, 10)}...`, 'info');
+                
+                const receipt = await swapTx.wait();
+                debugLog(`Swap confirmed in block ${receipt.blockNumber}`, 'success');
+                
+                showStatus(`Swap completed! ${amountIn} ${fromSymbol} → ${expectedAmountOut} ${toSymbol}`, 'success');
+                
+                // Reset form
+                document.getElementById('swapFromAmount').value = '';
+                document.getElementById('swapToAmount').value = '';
+                document.getElementById('priceInfo').style.display = 'none';
+                
+                // Update balances
+                await updateBalances();
+                await updatePoolInfo();
+                
+                debugLog('Swap completed successfully', 'success');
+                
+            } catch (error) {
+                debugLog(`Swap failed: ${error.message}`, 'error');
+                showStatus(`Swap failed: ${error.message}`, 'error');
+            } finally {
+                isTransacting = false;
+                const swapBtn = document.getElementById('swapBtn');
+                swapBtn.classList.remove('loading');
+                swapBtn.disabled = false;
+                swapBtn.textContent = 'Swap';
+            }
+        }
+
+        // Fixed liquidity calculation
+        async function calculateLiquidityB() {
+            const amountA = document.getElementById('liquidityAmountA').value;
+            if (!amountA || !contracts[currentPair] || parseFloat(amountA) <= 0) {
+                document.getElementById('liquidityAmountB').value = '';
+                return;
+            }
+
+            try {
+                const config = PAIRS_CONFIG[currentPair];
+                const pairContracts = contracts[currentPair];
+                
+                const reserves = await pairContracts.pair.getReserves();
+                const token0 = await pairContracts.pair.token0();
+                
+                const isTokenAToken0 = token0.toLowerCase() === config.TOKEN_A.address.toLowerCase();
+                const reserveA = isTokenAToken0 ? reserves.reserve0 : reserves.reserve1;
+                const reserveB = isTokenAToken0 ? reserves.reserve1 : reserves.reserve0;
+                
+                if (reserveA.gt(0)) {
+                    const amountAWei = ethers.utils.parseUnits(amountA, config.TOKEN_A.decimals);
+                    const amountB = await pairContracts.router.quote(amountAWei, reserveA, reserveB);
+                    const formattedAmountB = ethers.utils.formatUnits(amountB, config.TOKEN_B.decimals);
+                    document.getElementById('liquidityAmountB').value = parseFloat(formattedAmountB).toFixed(6);
+                }
+                
+            } catch (error) {
+                debugLog(`Liquidity calculation failed: ${error.message}`, 'error');
+                document.getElementById('liquidityAmountB').value = '';
+            }
+        }
+
+        async function addLiquidity() {
+            if (!userAddress || isTransacting) {
+                showStatus('Please connect wallet or wait for current transaction', 'warning');
+                return;
+            }
+
+            const amountA = document.getElementById('liquidityAmountA').value;
+            const amountB = document.getElementById('liquidityAmountB').value;
+            
+            if (!amountA || !amountB || parseFloat(amountA) <= 0 || parseFloat(amountB) <= 0) {
+                showStatus('Please enter valid amounts for both tokens', 'error');
+                return;
+            }
+
+            try {
+                isTransacting = true;
+                const config = PAIRS_CONFIG[currentPair];
+                const pairContracts = contracts[currentPair];
+                
+                debugLog(`Adding liquidity: ${amountA} ${config.TOKEN_A.symbol} + ${amountB} ${config.TOKEN_B.symbol}`, 'info');
+                
+                const amountAWei = ethers.utils.parseUnits(amountA, config.TOKEN_A.decimals);
+                const amountBWei = ethers.utils.parseUnits(amountB, config.TOKEN_B.decimals);
+                
+                // Set button to loading state
+                const addBtn = document.getElementById('addLiquidityBtn');
+                addBtn.classList.add('loading');
+                addBtn.disabled = true;
+                addBtn.textContent = 'Adding Liquidity...';
+                
+                showStatus('Approving tokens...', 'info');
+                
+                // Approve both tokens
+                const [allowanceA, allowanceB] = await Promise.all([
+                    pairContracts.tokenA.allowance(userAddress, config.ROUTER_ADDRESS),
+                    pairContracts.tokenB.allowance(userAddress, config.ROUTER_ADDRESS)
+                ]);
+                
+                const promises = [];
+                if (allowanceA.lt(amountAWei)) {
+                    debugLog(`Approving ${amountA} ${config.TOKEN_A.symbol}...`, 'info');
+                    promises.push(pairContracts.tokenA.approve(config.ROUTER_ADDRESS, amountAWei));
+                }
+                if (allowanceB.lt(amountBWei)) {
+                    debugLog(`Approving ${amountB} ${config.TOKEN_B.symbol}...`, 'info');
+                    promises.push(pairContracts.tokenB.approve(config.ROUTER_ADDRESS, amountBWei));
+                }
+                
+                if (promises.length > 0) {
+                    const approveTxs = await Promise.all(promises);
+                    await Promise.all(approveTxs.map(tx => tx.wait()));
+                    debugLog('Token approvals confirmed', 'success');
+                }
+                
+                showStatus('Adding liquidity to pool...', 'info');
+                
+                // Add liquidity
+                const liquidityTx = await pairContracts.router.addLiquidity(
+                    config.TOKEN_A.address,
+                    config.TOKEN_B.address,
+                    amountAWei,
+                    amountBWei,
+                    userAddress
+                );
+                
+                debugLog(`Add liquidity transaction: ${liquidityTx.hash}`, 'info');
+                showStatus(`Transaction submitted: ${liquidityTx.hash.substring(0, 10)}...`, 'info');
+                
+                const receipt = await liquidityTx.wait();
+                debugLog(`Liquidity added in block ${receipt.blockNumber}`, 'success');
+                
+                showStatus(`Liquidity added successfully!`, 'success');
+                
+                // Reset form
+                document.getElementById('liquidityAmountA').value = '';
+                document.getElementById('liquidityAmountB').value = '';
+                
+                // Update balances
+                await updateBalances();
+                await updatePoolInfo();
+                
+            } catch (error) {
+                debugLog(`Add liquidity failed: ${error.message}`, 'error');
+                showStatus(`Add liquidity failed: ${error.message}`, 'error');
+            } finally {
+                isTransacting = false;
+                const addBtn = document.getElementById('addLiquidityBtn');
+                addBtn.classList.remove('loading');
+                addBtn.disabled = false;
+                addBtn.textContent = 'Add Liquidity';
+            }
+        }
+
+        // Fixed remove liquidity calculation
+        async function calculateRemoveAmounts() {
+            const liquidityAmount = document.getElementById('removeLiquidityAmount').value;
+            if (!liquidityAmount || !contracts[currentPair] || parseFloat(liquidityAmount) <= 0) {
+                document.getElementById('removeTokenAAmount').textContent = '0';
+                document.getElementById('removeTokenBAmount').textContent = '0';
+                return;
+            }
+
+            try {
+                const config = PAIRS_CONFIG[currentPair];
+                const pairContracts = contracts[currentPair];
+                
+                const [reserves, totalSupply, token0] = await Promise.all([
+                    pairContracts.pair.getReserves(),
+                    pairContracts.pair.totalSupply(),
+                    pairContracts.pair.token0()
+                ]);
+                
+                const liquidityWei = ethers.utils.parseEther(liquidityAmount);
+                const isTokenAToken0 = token0.toLowerCase() === config.TOKEN_A.address.toLowerCase();
+                const reserveA = isTokenAToken0 ? reserves.reserve0 : reserves.reserve1;
+                const reserveB = isTokenAToken0 ? reserves.reserve1 : reserves.reserve0;
+                
+                if (totalSupply.gt(0)) {
+                    const amountA = reserveA.mul(liquidityWei).div(totalSupply);
+                    const amountB = reserveB.mul(liquidityWei).div(totalSupply);
+                    
+                    document.getElementById('removeTokenAAmount').textContent = parseFloat(ethers.utils.formatUnits(amountA, config.TOKEN_A.decimals)).toFixed(6);
+                    document.getElementById('removeTokenBAmount').textContent = parseFloat(ethers.utils.formatUnits(amountB, config.TOKEN_B.decimals)).toFixed(6);
+                }
+                
+            } catch (error) {
+                debugLog(`Remove calculation failed: ${error.message}`, 'error');
+                document.getElementById('removeTokenAAmount').textContent = '0';
+                document.getElementById('removeTokenBAmount').textContent = '0';
+            }
+        }
+
+        async function removeLiquidity() {
+            if (!userAddress || isTransacting) {
+                showStatus('Please connect wallet or wait for current transaction', 'warning');
+                return;
+            }
+
+            const liquidityAmount = document.getElementById('removeLiquidityAmount').value;
+            if (!liquidityAmount || parseFloat(liquidityAmount) <= 0) {
+                showStatus('Please enter a valid liquidity amount', 'error');
+                return;
+            }
+
+            try {
+                isTransacting = true;
+                const config = PAIRS_CONFIG[currentPair];
+                const pairContracts = contracts[currentPair];
+                
+                debugLog(`Removing ${liquidityAmount} LP tokens`, 'info');
+                
+                const liquidityWei = ethers.utils.parseEther(liquidityAmount);
+                
+                // Set button to loading state
+                const removeBtn = document.getElementById('removeLiquidityBtn');
+                removeBtn.classList.add('loading');
+                removeBtn.disabled = true;
+                removeBtn.textContent = 'Removing Liquidity...';
+                
+                showStatus('Approving LP tokens...', 'info');
+                
+                // Approve LP tokens
+                const allowance = await pairContracts.pair.allowance(userAddress, config.ROUTER_ADDRESS);
+                if (allowance.lt(liquidityWei)) {
+                    debugLog('Approving LP tokens...', 'info');
+                    const approveTx = await pairContracts.pair.approve(config.ROUTER_ADDRESS, liquidityWei);
+                    await approveTx.wait();
+                    debugLog('LP token approval confirmed', 'success');
+                }
+                
+                showStatus('Removing liquidity from pool...', 'info');
+                
+                // Remove liquidity
+                const removeTx = await pairContracts.router.removeLiquidity(
+                    config.TOKEN_A.address,
+                    config.TOKEN_B.address,
+                    liquidityWei,
+                    userAddress
+                );
+                
+                debugLog(`Remove liquidity transaction: ${removeTx.hash}`, 'info');
+                showStatus(`Transaction submitted: ${removeTx.hash.substring(0, 10)}...`, 'info');
+                
+                const receipt = await removeTx.wait();
+                debugLog(`Liquidity removed in block ${receipt.blockNumber}`, 'success');
+                
+                showStatus('Liquidity removed successfully!', 'success');
+                
+                // Reset form
+                document.getElementById('removeLiquidityAmount').value = '';
+                document.getElementById('removeTokenAAmount').textContent = '0';
+                document.getElementById('removeTokenBAmount').textContent = '0';
+                
+                // Update balances
+                await updateBalances();
+                await updatePoolInfo();
+                
+            } catch (error) {
+                debugLog(`Remove liquidity failed: ${error.message}`, 'error');
+                showStatus(`Remove liquidity failed: ${error.message}`, 'error');
+            } finally {
+                isTransacting = false;
+                const removeBtn = document.getElementById('removeLiquidityBtn');
+                removeBtn.classList.remove('loading');
+                removeBtn.disabled = false;
+                removeBtn.textContent = 'Remove Liquidity';
+            }
+        }
+
+        function refreshPoolInfo() {
+            if (userAddress) {
+                showStatus('Refreshing pool data...', 'info');
+                Promise.all([updateBalances(), updatePoolInfo(), updateNetworkInfo()])
+                    .then(() => showStatus('Pool data refreshed!', 'success'))
+                    .catch(error => {
+                        debugLog(`Refresh failed: ${error.message}`, 'error');
+                        showStatus('Refresh failed', 'error');
+                    });
+            }
+        }
+
+        function disconnectWallet() {
+            userAddress = null;
+            provider = null;
+            signer = null;
+            connectedWalletType = null;
+            contracts = {};
+            
+            // Clear localStorage
+            localStorage.removeItem('walletConnected');
+            localStorage.removeItem('connectedWalletType');
+            
+            // Reset UI
+            document.getElementById('walletDisconnected').style.display = 'block';
+            document.getElementById('walletConnected').style.display = 'none';
+            
+            // Disable buttons
+            document.getElementById('swapBtn').disabled = true;
+            document.getElementById('swapBtn').textContent = 'Connect Wallet to Swap';
+            document.getElementById('addLiquidityBtn').disabled = true;
+            document.getElementById('addLiquidityBtn').textContent = 'Connect Wallet to Add Liquidity';
+            document.getElementById('removeLiquidityBtn').disabled = true;
+            document.getElementById('removeLiquidityBtn').textContent = 'Connect Wallet to Remove Liquidity';
+            
+            // Clear balances
+            document.getElementById('fromBalance').textContent = '0';
+            document.getElementById('toBalance').textContent = '0';
+            document.getElementById('liquidityBalanceA').textContent = '0';
+            document.getElementById('liquidityBalanceB').textContent = '0';
+            document.getElementById('lpBalance').textContent = '0';
+            
+            debugLog('Wallet disconnected', 'info');
+            showStatus('Wallet disconnected', 'info');
+        }
+
+        // Event handlers
+        function handleAccountsChanged(accounts) {
+            if (accounts.length === 0) {
+                debugLog('Wallet accounts changed: No accounts', 'warning');
+                disconnectWallet();
+            } else if (accounts[0] !== userAddress) {
+                debugLog(`Wallet accounts changed: ${accounts[0]}`, 'info');
+                location.reload();
+            }
+        }
+
+        function handleChainChanged(chainId) {
+            debugLog(`Network changed: ${chainId}`, 'info');
+            location.reload();
+        }
+
+        function handleDisconnect() {
+            debugLog('Wallet disconnected by user', 'info');
+            disconnectWallet();
+        }
+
+        // Utility functions
+        function showStatus(message, type = 'info') {
+            const statusDiv = document.getElementById('status');
+            statusDiv.innerHTML = `<div class="status ${type}">${message}</div>`;
+            
+            if (type === 'success') {
+                setTimeout(() => statusDiv.innerHTML = '', 5000);
+            }
+        }
+
+        // Initialize the application when page loads
+        window.addEventListener('load', init);
+
+        // Auto-refresh network info every 30 seconds
+        setInterval(() => {
+            if (provider) {
+                updateNetworkInfo();
+            }
+        }, 30000);
+    </script>
+</body>
+</html>

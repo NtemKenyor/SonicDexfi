@@ -1,0 +1,233 @@
+<div class="tab-content active" id="swap">
+    <style>
+      :root {
+        --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        --success-color: #10b981;
+        --error-color: #ef4444;
+        --glass-bg: rgba(255, 255, 255, 0.08);
+        --glass-border: rgba(255, 255, 255, 0.15);
+      }
+  
+      /* Centered container */
+      .swap-container {
+        max-width: 420px;
+        margin: 2rem auto;
+      }
+  
+      /* Swap card */
+      .swap-card {
+        background: var(--glass-bg);
+        border: 1px solid var(--glass-border);
+        border-radius: 20px;
+        padding: 1.5rem;
+        backdrop-filter: blur(20px);
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+      }
+  
+      .swap-title {
+        font-size: 1.5rem;
+        font-weight: 700;
+        margin-bottom: 1.5rem;
+        text-align: center;
+        background: var(--primary-gradient);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+      }
+  
+      /* Input groups */
+      .swap-group {
+        margin-bottom: 1rem;
+        background: rgba(255, 255, 255, 0.05);
+        padding: 1rem;
+        border-radius: 12px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+  
+      .swap-group input {
+        border: none;
+        background: transparent;
+        color: white;
+        font-size: 1rem;
+        flex: 1;
+      }
+  
+      .swap-group input:focus {
+        outline: none;
+      }
+  
+      .token-select {
+        margin-left: 1rem;
+        padding: 0.4rem 0.8rem;
+        border-radius: 8px;
+        border: 1px solid var(--glass-border);
+        background: rgba(255, 255, 255, 0.1);
+        color: white;
+        cursor: pointer;
+      }
+  
+      /* Reverse button */
+      .reverse-btn {
+        display: block;
+        margin: 0.8rem auto;
+        background: rgba(255, 255, 255, 0.1);
+        border: 1px solid var(--glass-border);
+        border-radius: 50%;
+        width: 40px;
+        height: 40px;
+        color: white;
+        font-size: 1.2rem;
+        cursor: pointer;
+        transition: transform 0.2s ease;
+      }
+  
+      .reverse-btn:hover {
+        transform: rotate(180deg);
+      }
+  
+      /* Swap button */
+      .btn-swap {
+        width: 100%;
+        background: var(--primary-gradient);
+        color: white;
+        border: none;
+        padding: 0.8rem;
+        border-radius: 12px;
+        cursor: pointer;
+        font-size: 1rem;
+        font-weight: 600;
+        transition: all 0.3s ease;
+      }
+  
+      .btn-swap:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+      }
+  
+      /* Status */
+      .swap-status {
+        margin-top: 1rem;
+        font-size: 0.95rem;
+        font-weight: 500;
+        text-align: center;
+      }
+  
+      .swap-status.success {
+        color: var(--success-color);
+      }
+  
+      .swap-status.error {
+        color: var(--error-color);
+      }
+    </style>
+  
+    <div class="swap-container">
+      <div class="swap-card">
+        <h3 class="swap-title">🔄 Swap Tokens</h3>
+  
+        <!-- From -->
+        <div class="swap-group">
+          <input type="number" id="fromAmount" placeholder="0.0" />
+          <select id="fromToken" class="token-select">
+            <option value="ETH">ETH</option>
+            <option value="USDC">USDC</option>
+            <option value="BTC">BTC</option>
+          </select>
+        </div>
+  
+        <!-- Reverse -->
+        <button class="reverse-btn" id="reverseBtn">⇅</button>
+  
+        <!-- To -->
+        <div class="swap-group">
+          <input type="number" id="toAmount" placeholder="0.0" readonly />
+          <select id="toToken" class="token-select">
+            <option value="USDC">USDC</option>
+            <option value="ETH">ETH</option>
+            <option value="BTC">BTC</option>
+          </select>
+        </div>
+  
+        <!-- Swap -->
+        <button class="btn-swap" id="swapBtn">Swap</button>
+  
+        <!-- Status -->
+        <div id="swapStatus" class="swap-status"></div>
+      </div>
+    </div>
+  
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        const fromAmount = document.getElementById("fromAmount");
+        const toAmount = document.getElementById("toAmount");
+        const fromToken = document.getElementById("fromToken");
+        const toToken = document.getElementById("toToken");
+        const reverseBtn = document.getElementById("reverseBtn");
+        const swapBtn = document.getElementById("swapBtn");
+        const swapStatus = document.getElementById("swapStatus");
+  
+        // Mock rates (simple demo, not real-time)
+        const mockRates = {
+          "ETH/USDC": 3200,
+          "USDC/ETH": 1 / 3200,
+          "BTC/USDC": 41000,
+          "USDC/BTC": 1 / 41000,
+          "ETH/BTC": 0.078,
+          "BTC/ETH": 1 / 0.078,
+        };
+  
+        // Update "toAmount" on input
+        function updateToAmount() {
+          const amount = parseFloat(fromAmount.value);
+          if (!amount || amount <= 0) {
+            toAmount.value = "";
+            return;
+          }
+          const pair = `${fromToken.value}/${toToken.value}`;
+          const rate = mockRates[pair];
+          if (rate) {
+            toAmount.value = (amount * rate).toFixed(6);
+          } else {
+            toAmount.value = "";
+          }
+        }
+  
+        fromAmount.addEventListener("input", updateToAmount);
+        fromToken.addEventListener("change", updateToAmount);
+        toToken.addEventListener("change", updateToAmount);
+  
+        // Reverse tokens
+        reverseBtn.addEventListener("click", () => {
+          const temp = fromToken.value;
+          fromToken.value = toToken.value;
+          toToken.value = temp;
+          updateToAmount();
+        });
+  
+        // Handle Swap button
+        swapBtn.addEventListener("click", () => {
+          const amount = fromAmount.value;
+          if (!amount || amount <= 0) {
+            swapStatus.textContent = "❌ Enter a valid amount.";
+            swapStatus.className = "swap-status error";
+            return;
+          }
+          if (fromToken.value === toToken.value) {
+            swapStatus.textContent = "❌ Cannot swap the same token.";
+            swapStatus.className = "swap-status error";
+            return;
+          }
+  
+          swapStatus.textContent = "⏳ Processing swap...";
+          swapStatus.className = "swap-status";
+  
+          setTimeout(() => {
+            swapStatus.textContent = `✅ Swapped ${amount} ${fromToken.value} → ${toAmount.value} ${toToken.value}`;
+            swapStatus.className = "swap-status success";
+          }, 1200);
+        });
+      });
+    </script>
+  </div>
+  
