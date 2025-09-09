@@ -712,7 +712,7 @@
                 <label>Trading Pair:</label>
                 <select id="swapPairSelect" onchange="selectPair(this.value)">
                     <option value="STT_USSD">WS/USDD - Wrapped Sonic ↔ US Standard Dollar</option>
-                    <option value="GX_USSD">GX/USDD - GX Token ↔ US Standard Dollar</option>
+                    <option value="GX_USDD">GX/USDD - GX Token ↔ US Standard Dollar</option>
                 </select>
             </div>
 
@@ -767,7 +767,7 @@
                 <label>Trading Pair:</label>
                 <select id="liquidityPairSelect" onchange="selectPair(this.value)">
                     <option value="STT_USSD">WS/USDD - Wrapped Sonic ↔ US Standard Dollar</option>
-                    <option value="GX_USSD">GX/USDD - GX Token ↔ US Standard Dollar</option>
+                    <option value="GX_USDD">GX/USDD - GX Token ↔ US Standard Dollar</option>
                 </select>
             </div>
 
@@ -807,7 +807,7 @@
                 <label>Trading Pair:</label>
                 <select id="removePairSelect" onchange="selectPair(this.value)">
                     <option value="STT_USSD">WS/USDD - Wrapped Sonic ↔ US Standard Dollar</option>
-                    <option value="GX_USSD">GX/USDD - GX Token ↔ US Standard Dollar</option>
+                    <option value="GX_USDD">GX/USDD - GX Token ↔ US Standard Dollar</option>
                 </select>
             </div>
 
@@ -841,7 +841,7 @@
                 <label>Trading Pair:</label>
                 <select id="poolsPairSelect" onchange="selectPair(this.value)">
                     <option value="STT_USSD">WS/USDD - Wrapped Sonic ↔ US Standard Dollar</option>
-                    <option value="GX_USSD">GX/USDD - GX Token ↔ US Standard Dollar</option>
+                    <option value="GX_USDD">GX/USDD - GX Token ↔ US Standard Dollar</option>
                 </select>
             </div>
 
@@ -992,17 +992,16 @@
 
 
         // Multi-pair configuration
-
         const PAIRS_CONFIG = {
-            STT_USDD: {
+            WS_USDD: {
                 name: 'WS/USDD',
-                FACTORY_ADDRESS: "0xb06229eD4c53aEC803eC9E2c0d25B954685d77EC",
-                ROUTER_ADDRESS: "0xEd03899F0804B5BD49a06192f22900f89F3EC019",
-                PAIR_ADDRESS: "0x81001f1e0fC4aBB1F76444AFeEb148Bc8d1F9118",
+                FACTORY_ADDRESS: "0x812455F53de1E18540669dc80C81D7c0CC14497D",
+                ROUTER_ADDRESS: "0x98FF6D7872dd8A59730cB40BbAF9c86191E8024F",
+                PAIR_ADDRESS: "0x1988A1Db18ad72528522AD321Fc5F7dA810E5834",
                 TOKEN_A: {
-                    address: "0xF22eF0085f6511f70b01a68F360dCc56261F768a",
+                    address: "0xeBB8f797C19C29f3A0c1e0952f106c4a83Ca0F65",
                     symbol: "S",
-                    name: "Sonic Testnet Token",
+                    name: "Wrapped Sonic Testnet Token - WS",
                     decimals: 18
                 },
                 TOKEN_B: {
@@ -1071,7 +1070,7 @@
 
         // Global state
         let provider, signer, userAddress, connectedWalletType;
-        let currentPair = 'STT_USSD';
+        let currentPair = 'WS_USSD';
         let contracts = {};
         let isTransacting = false;
         let swapDirection = 'A_TO_B'; // A_TO_B or B_TO_A
@@ -1137,6 +1136,8 @@
 
         function selectPair(pairName) {
             currentPair = pairName;
+
+            console.log("Selecting pair:", pairName);
             
             // Update all dropdowns
             document.getElementById('swapPairSelect').value = pairName;
@@ -1345,7 +1346,8 @@
               connectedWalletType = walletType;
 
               debugLog(`Connected to ${userAddress}`, 'success');
-              await ensureSomniaNetwork();
+            //   await ensureSomniaNetwork();
+              await ensureSonicNetwork(); 
               await initializeContracts();
               await updateWalletUI();
 
@@ -1364,13 +1366,13 @@
       }
 
 
-        async function ensureSomniaNetwork() {
+        async function ensureSonicNetwork() {
             try {
                 const network = await provider.getNetwork();
                 debugLog(`Current network: ${network.name} (${network.chainId})`, 'info');
 
                 if (network.chainId !== parseInt(SONIC_CONFIG.chainId, 16)) {
-                    debugLog('Switching to Somnia Testnet...', 'info');
+                    debugLog('Switching to Sonic Testnet...', 'info');
 
                     try {
                         await provider.provider.request({
