@@ -109,7 +109,7 @@ We welcome contributions from the community!
 * Create a feature branch
 * Submit a pull request
 
-Please read our **[CONTRIBUTING.md](CONTRIBUTING.md)** for guidelines.
+<!-- Please read our **[CONTRIBUTING.md](CONTRIBUTING.md)** for guidelines. -->
 
 ---
 
