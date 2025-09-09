@@ -12,7 +12,8 @@ async function main() {
   // const TOKEN_A         = process.env.TOKEN_A; // e.g. WSTT
   // const TOKEN_B         = process.env.TOKEN_B; // e.g. USSD
   // const TOKEN_A = "0xd0c6db65b4B6Fd9B0FF325520A30c2aa726133f2"; // GX
-  const TOKEN_A = "0xf0a21805a0Be4164783bDa5b2133F32506291C87"; // STT (i.e WSTT)
+  // const TOKEN_A = "0xf0a21805a0Be4164783bDa5b2133F32506291C87"; // STT (i.e WSTT)
+  const TOKEN_A = "0xeBB8f797C19C29f3A0c1e0952f106c4a83Ca0F65";
   const TOKEN_B = "0x65ad6C756ED11Ff84ACF9eDa8B5891F945aecD1F"; // USSD
 
 
