@@ -46,12 +46,42 @@ Built for **speed, security, and simplicity**, Sonic Dexfi eliminates the need f
 ## 📂 Project Structure
 
 ```
-sonic-token-project/
-│── contracts/        # Smart contracts
-│── scripts/         # They work with the contracts above.
-│── api/              # Backend services (Node.js / Python)
-│── docs/             # Documentation
-│── README.md         # Project description - contained outside this folder.
+tree -L 2
+.
+├── assets
+│   ├── css
+│   └── js
+├── dex.html
+├── index.html
+├── pairs.html
+├── ramp.html
+├── README.md
+├── rough.html
+├── rough_.html
+├── sonic-token-project
+│   ├── api
+│   ├── artifacts
+│   ├── cache
+│   ├── commands.md
+│   ├── contracts
+│   ├── hardhat.config.js
+│   ├── metadata.json
+│   ├── node_modules
+│   ├── output.md
+│   ├── output_raw.md
+│   ├── package.json
+│   ├── package-lock.json
+│   └── scripts
+├── swap.html
+├── token_builder copy.html
+├── token_builder.html
+├── token-dapp
+│   ├── app.js
+│   ├── index.html
+│   └── style.css
+└── wallet.html
+
+11 directories, 21 files 
 ```
 
 ---
@@ -65,7 +95,7 @@ git clone https://github.com/NtemKenyor/SonicDexfi.git
 cd SonicDexfi
 ```
 
-### 2️⃣ Install dependencies
+### 2️⃣ Install dependencies in sonic-token-project folder
 
 ```bash
 npm install

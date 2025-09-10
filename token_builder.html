@@ -14,7 +14,7 @@
   </style>
 </head>
 <body>
-  
+
   <div id="domainWarning" style="
     display:none; 
     background: #ff4c4c; 
@@ -26,7 +26,7 @@
   ">
     ⚠️ This app is built for <strong>localhost usage</strong>.  
     You are running it from <span id="currentDomain"></span>.  
-    We are working on improving it but Please run it locally for full functionality. Please follow the guide on Github
+    We are working on improving it but Please run it locally for full functionality. Please follow the <a href="test.md">testguide</a> on Github
   </div>
 
   <div class="container">
@@ -90,7 +90,7 @@
 
   <script>
     const API_BASE = "http://localhost:4000/api/token"; // local API
-    const REMOTE_API_BASE = "https://roynek.com/api/token"; // remote API if deployed
+    const REMOTE_API_BASE = "https://roynek.com/api/token"; // remote API if deployed - coming soon
 
     let provider, signer, walletAddress;
     let currentTokenAddress = null;
