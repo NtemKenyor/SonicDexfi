@@ -15,9 +15,9 @@ app.use(cors());
 app.use(express.json());
 
 // Routes
-// app.use("/api/token", tokenRoutes);
-// app.use("/api/posts", postRoutes);
-// app.use("/api/ramp", rampRoutes); // Add this line
+app.use("/api/token", tokenRoutes);
+app.use("/api/posts", postRoutes);
+app.use("/api/ramp", rampRoutes); // Add this line
 
 
 const PORT = 4000;

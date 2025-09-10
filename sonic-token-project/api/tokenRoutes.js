@@ -20,6 +20,14 @@ const provider = new ethers.providers.JsonRpcProvider({
   name: "sonic",
 });
 
+// const provider = new JsonRpcProvider(
+//   "https://rpc.testnet.soniclabs.com",
+//   {
+//     chainId: 14601,      // Sonic Testnet chainId
+//     name: "sonic-testnet"
+//   }
+// );
+
 console.log(provider);
 
 const wallet = new ethers.Wallet(process.env.PRIVATE_KEY, provider);
