@@ -330,36 +330,8 @@
     // Init
     window.onload = () => {
       loadTokens();
-
-      const host = window.location.hostname;
-      if (!(host === "localhost" || host === "127.0.0.1")) {
-        document.getElementById("domainWarning").style.display = "block";
-        document.getElementById("currentDomain").innerText = host;
-      }
-
     };
   </script>
   <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
-
-  
-
-  <div id="domainWarning" style="
-    display:none; 
-    background: #ff4c4c; 
-    color: white; 
-    padding: 12px; 
-    font-weight: bold; 
-    border-radius: 6px; 
-    margin-bottom: 20px;
-  ">
-    ⚠️ This app is built for <strong>localhost usage</strong>.  
-    You are running it from <span id="currentDomain"></span>.  
-    We are working on improving it but Please run it locally for full functionality. Please follow the guide on Github
-  </div>
-
-  <div class="container">
-    <h1>🚀 Sonic Token Builder</h1>
-    ...
-  </div>
 </body>
 </html>

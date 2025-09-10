@@ -19,6 +19,10 @@ app.use("/api/token", tokenRoutes);
 app.use("/api/posts", postRoutes);
 app.use("/api/ramp", rampRoutes); // Add this line
 
+// Serve "Hello World" at /sonic_universe/client/sonic_planet/api/
+app.get('/', (req, res) => {
+  res.send('Entrace Point - Hello world - Sonic API');
+});
 
 const PORT = 4000;
 app.listen(PORT, () => {
